@@ -1,4 +1,6 @@
 // share objects
+var config = require('config');
+
 module.exports = {
 	express : undefined,
 	Session : undefined,
@@ -13,11 +15,14 @@ module.exports = {
 	user	: undefined,
 	path	: undefined,
 	http	: undefined,
+	ssKey	: undefined,
+	csKey	: undefined,
 	passport: undefined
 };
 
 module.exports.init = function(){
 	var	RedisStore;
+	console.log('configType=',config.configType);
 	module.exports.express	= require('express');
 	module.exports.Session	= module.exports.express.session.Session;
 	module.exports.connect	= require('connect');
@@ -29,6 +34,8 @@ module.exports.init = function(){
 	module.exports.user		= require('./routes/user');	
 	module.exports.path		= require('path');
 	module.exports.http		= require('http');
+	module.exports.ssKey	= config.secretKey;
+	module.exports.csKey	= config.cookieSessionKey;
 	module.exports.passport = require('passport');
 	if ('development' == module.exports.app.get('env')) {
 		module.exports.store = new (module.exports.connect.session.MemoryStore)();

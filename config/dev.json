@@ -1,0 +1,5 @@
+{
+	"configType" : "develop",
+	"secretKey" : "secret nyanko",
+	"cookieSessionKey" : "csid"
+}

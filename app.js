@@ -12,8 +12,8 @@ so.init();
 db.init();
 
 // all environments
-so.app.set('secretKey','debu nyanko');         // appにセットしておく
-so.app.set('cookieSessionKey','sid');
+so.app.set('secretKey',so.ssKey);         // appにセットしておく
+so.app.set('cookieSessionKey',so.csKey);
 so.app.set('host',so.host);
 so.app.set('port',so.port);
 so.app.set('views', __dirname + '/views');
