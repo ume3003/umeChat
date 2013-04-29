@@ -1,0 +1,39 @@
+body {
+  padding: 5px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+.basement {
+	position :relative;
+	top:2px;
+	left:2px;
+}
+.basebox {
+		position :absolute;
+}
+.box {
+	position :absolute;
+	border:1px solid #000;
+}
+.btnbox {
+	position :absolute;
+	border:1px solid #000;
+	text-align:center;
+}
+.list {
+	position :absolute;
+	left:1px;
+	height:20px;
+	width:170px;
+	font: 12px "Lucida Grande", Helvetica, Arial,sans-serif;
+}
+.chat {
+	position : absolute;
+	left:2px;
+	top:2px;
+	width:290px;
+	height:258px;
+}
