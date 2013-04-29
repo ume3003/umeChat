@@ -17,12 +17,17 @@ module.exports = {
 	http	: undefined,
 	ssKey	: undefined,
 	csKey	: undefined,
+	mongoURL: undefined,
+	errMsg	: undefined,
+	msg		: undefined,
 	passport: undefined
 };
 
 module.exports.init = function(){
 	var	RedisStore;
 	console.log('configType=',config.configType);
+	console.log('test case',config.testVal);
+
 	module.exports.express	= require('express');
 	module.exports.Session	= module.exports.express.session.Session;
 	module.exports.connect	= require('connect');
@@ -36,6 +41,9 @@ module.exports.init = function(){
 	module.exports.http		= require('http');
 	module.exports.ssKey	= config.secretKey;
 	module.exports.csKey	= config.cookieSessionKey;
+	module.exports.mongoURL = config.mongoURL;
+	module.exports.errMsg	= config.errMsg;
+	module.exports.msg		= config.msg;
 	module.exports.passport = require('passport');
 	if ('development' == module.exports.app.get('env')) {
 		module.exports.store = new (module.exports.connect.session.MemoryStore)();

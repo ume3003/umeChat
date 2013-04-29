@@ -1,7 +1,7 @@
 {
-	"configType" : "default",
+	"configType" : "develop",
 	"secretKey" : "secret nyanko",
 	"cookieSessionKey" : "csid",
 	"mongoURL" : "mongodb://localhost/umeChat",
-	"testVal" : "def"
+	"testVal" : "dev"
 }

@@ -1,0 +1,6 @@
+{
+	"configType" : "production",
+	"secretKey" : "debu nyanko",
+	"cookieSessionKey" : "nyankoid",
+	"mongoURL" : "mongodb://localhost/umeChat"
+}

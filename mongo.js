@@ -4,6 +4,7 @@ var
 	Chat,
 	Room,
 	mongoose	= require('mongoose'),
+	so			= require('./shareObj'),
 	Schema		= mongoose.Schema,
 	FriendSchema = new Schema({
 			user_id		: String,
@@ -36,7 +37,7 @@ var
 
 exports.init = function()
 {
-	mongoose.connect('mongodb://localhost/umeChat');
+	mongoose.connect(so.mongoURL);
 	Friend = mongoose.model('Friend',FriendSchema);
 	User = mongoose.model('User',UserSchema);
 	Chat = mongoose.model('Chat',ChatSchema);
