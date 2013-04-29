@@ -292,7 +292,7 @@ exports.createRoom = function(userId,roomInfo,callback){
 				if(!err && users && users.length > 0){
 					users[0].room_ids.push(newRoom.id);
 					users[0].save(function(err1){
-						callback(err1,newRoom.id,users[0].room_ids.length + 1;);
+						callback(err1,newRoom.id,users[0].room_ids.length + 1);
 					});
 				}
 				else{
