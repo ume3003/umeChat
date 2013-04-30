@@ -47,7 +47,13 @@ exports.init = function()
 		return callback('cookie not found',false);
 	}
 });
-
+// user 
+//		displayName
+//		emails[0].value
+//		name.familyName name.givenName
+//		identifier
+//		type
+//		id
 io.sockets.on('connection',function(socket){
 	var user = socket.handshake.session.user,
 		userID = socket.handshake.session.userID,
@@ -74,21 +80,28 @@ io.sockets.on('connection',function(socket){
 
 
 	socket.on('msg_send',function(msg){	// TODO:ここでルームチェックとルームへのチャットデータの登録を行う
-		socket.to(msg.roomId).emit('msg_push',{uID:socket.handshake.session.userID,msg : msg.msg,roomId:msg.roomId});
+		socket.to(msg.roomId).emit('msg_push',
+			{uID:socket.handshake.session.userID,msg : msg.msg,roomId:msg.roomId});
 	});
 
 	socket.on('msg_joinRoom',function(roomId){
 
 	});
 	socket.on('inviteFriend',function(msg){
-		db.addFriend(user.id,msg.friendEmail,function(err,user,friend){
-			if(err){
-				socket.emit('friendInvited',{idx:-1,id:undefined,mail:undefined,stat:undefined});
-			}
-			else{	// 結果を返す
-				socket.emit('friendInvited',{idx:user.friends.length - 1,id:friend.id,email:friend.email,stat:friend.stat});
-			}
-		});
+		if(msg.friendEmail === user.emails[0].value){
+			socket.emit('friendInvited',{idx:-1});
+		}
+		else{
+			db.addFriend(user.id,msg.friendEmail,function(err,user,friend){
+				if(err){
+					socket.emit('friendInvited',{idx:-1});
+				}
+				else{	// 結果を返す
+					socket.emit('friendInvited',
+						{idx:user.friends.length - 1,id:friend.id,email:friend.email,stat:friend.stat});
+				}
+			});
+		}
 	});
 	socket.on('msg_createRoom',function(msg){
 		var roomInfo = {roomOwner : user.id,roomName : msg,member : [user.id]};

@@ -20,8 +20,25 @@ $(function(){
 			friends[id] = {no:num,name:name,$friend:$friendDiv,flag:flag};
 
 		}
+		,createRoom = function(num){
+			var	$chatDiv = chatBase.append('<div/>').find(':last');
+			$chatDiv.attr('id','chat' + num);
+			$chatDiv.addClass('chat');
+			$chatDiv.text(num);
+			$chatDiv.hide();
+			return $chatDiv;
+		}
+		,changeRoom = function($chat,$room,num){
+			if(roomListCtrl.current !== undefined){
+				roomListCtrl.current.hide();
+			}
+			$chat.show();
+			$room.css('font-weight','normal');
+			roomListCtrl.current = $chat;
+			currentRoomId = num;
+		}
 		,createRoomList = function(num,id,name,show){
-			var	$chatDiv = chatBase.append('<div/>').find(':last'),
+			var	$chatDiv = createRoom(num),
 				$roomDiv = roomListCtrl.append('<div/>').find(':last');
 			$roomDiv.attr('id','room' + num);
 			$roomDiv.addClass('list');
@@ -29,21 +46,12 @@ $(function(){
 			$roomDiv.text(name);
 			(function(arg,$chat){
 				$roomDiv.click(function(){
-					roomListCtrl.current.hide();
-					$chat.show();
-					$roomDiv.css('font-weight','normal');
-					roomListCtrl.current = $chat;
-					currentRoomId = arg;
+					changeRoom($chat,$roomDiv,arg);
 				});
 			})(id,$chatDiv);
-			$chatDiv.attr('id','chat' + num);
-			$chatDiv.addClass('chat');
-			$chatDiv.text(num);
-			$chatDiv.hide();
+
 			if(show){
-				$chatDiv.show();
-				currentRoomId = id;
-				roomListCtrl.current = $chatDiv;
+				changeRoom($chatDiv,$roomDiv,id);
 			}
 			rooms[id] = {no:num,name:name,$chat:$chatDiv,$room:$roomDiv};
 		}
@@ -78,34 +86,8 @@ $(function(){
 		}
 		console.log(msg);
 	});
-	socket.on('msg_push_a',function(msg){
-		var date = new Date();
-		$('#list').prepend($('<dt>' + date.getFullYear() + "/" +( date.getMonth()+1) 
-			+ "/" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + '</dt><dd>' 
-			+ msg.uID + " " + msg.msg + '</dd>'));
-	});
-	socket.on('join',function(user){
-		members[user.displayName] = user;
-		console.log('join new user ' + user.displayName);
-		makeBoard();
-	});
-	socket.on('member',function(mem){
-		var m;
-		if(mem !== undefined && mem.members !== undefined){
-			console.log('member');
-			for(var i in mem.members){
-				m = mem.members[i];
-				members[m.displayName] = m;
-				console.log('has member ' , m);
-			}
-			makeBoard();
-		}
-		else{
-			console.log('mem is null');
-		}
-	});
 	socket.on('roomCreated',function(msg){
-		console.log(msg);
+		console.log('roomCreated',msg);
 		if(msg && msg.create){
 			createRoomList(msg.joinCount -1,msg.roomId,msg.roomName,true);
 		}
@@ -130,19 +112,49 @@ $(function(){
 		delete members[userID];
 		makeBoard();
 	});
-	socket.on('msg_updateDB',function(msg){
-		console.log(msg);
-	});
 	socket.on('disconnect',function(msg){
 		console.log('disconnect');		// サーバからきれたらトップへリロード
 		window.location.reload();
 	});
 
+	socket.on('msg_updateDB',function(msg){
+		console.log(msg);
+	});
+	socket.on('join',function(user){
+		members[user.displayName] = user;
+		console.log('join new user ' + user.displayName);
+		makeBoard();
+	});
+	socket.on('member',function(mem){
+		var m;
+		if(mem !== undefined && mem.members !== undefined){
+			console.log('member');
+			for(var i in mem.members){
+				m = mem.members[i];
+				members[m.displayName] = m;
+				console.log('has member ' , m);
+			}
+			makeBoard();
+		}
+		else{
+			console.log('mem is null');
+		}
+	});
+
 	// 初期化
+	/*
 	$('#roomBtn').css('font-weight','bold');	
 	$('#friendBase').hide();
-
+*/
 	// UIイベントハンドラ
+	$('.tabPage').hover(
+		function(){
+			$(this).css({'background-color':'gray','cursor':'pointer'});// in Action
+		},
+		function(){
+			$(this).css({'background-color':'white','cursor':'normal'});// out Action
+		}
+	);
 	// チャットルームリストを表示
 	$('#roomBtn').click(function(){
 		if(currentMode === 1){

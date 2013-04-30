@@ -5,7 +5,7 @@
 
 exports.index = function(req, res){
 	console.log('in index ' ,req.sessionID);
-  res.render('index', { 
+  res.render('index2', { 
         title: 'Express ejs'
       , user:req.user
       }

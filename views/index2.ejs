@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title><%= title %></title>
+	<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+	<link rel='stylesheet' href='/stylesheets/style.css' />
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+</head>
+<body>
+	<div id="basement" class='basement'>
+		<!--- Tab -->
+		<div id="selectTab" class='tabBox'>
+			<div id='friendTab' class='tabPage'>Friend</div>
+			<div id='roomTab'	class='tabPage'>Room</div>
+			<div id='chatTab'	class='tabPage'>chat</div>
+			<div id='manageTab' class='tabPage'>Manage</div>
+		</div>
+		<!--- Header -->
+		<div id="headers" class='headerBox'>
+			<% if(!user){ %>
+				<a href="/auth/google">Sign On with Google</a>
+			<% } else { %>
+			<div id='myPhoto' class='photoL'>PIC</div>
+			<div id='myName' class='textL'>shozo.ueno</div>
+			<div id='myEmail' class='textS'>shozo.ueno@smikiegames.com</div>
+			<div id='myLogout' class='textS'>
+				<a href="/logout">Logout</a>
+			</div>
+			<% } %>
+		</div>
+			<!--- Friend List -->
+			<div id="friendBase" class='baseBox'>
+			</div>
+			<!--- Room List -->
+			<div id="roomBase" class='baseBox'>
+			</div>
+			<!--- chat -->
+			<div id="chatBase" class='baseBox'>
+			</div>
+			<!--- ManageFriend -->
+			<div id="manageBase" class='baseBox'>
+			</div>
+	</div>
+	<% if (user){ %>
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+		<script type="text/javascript" src="/javascripts/chat.js"></script>
+	<% } %>
+</body>
+</html>

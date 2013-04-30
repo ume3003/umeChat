@@ -3,5 +3,9 @@
 	"secretKey" : "secret nyanko",
 	"cookieSessionKey" : "csid",
 	"mongoURL" : "mongodb://localhost/umeChat",
-	"testVal" : "def"
+	"testVal" : "def",
+	"msg" : {
+		"test" : "てすと",
+		"sample" : "サンプル"
+	}
 }
