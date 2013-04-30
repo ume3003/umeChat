@@ -21,25 +21,30 @@
 			<% if(!user){ %>
 				<a href="/auth/google">Sign On with Google</a>
 			<% } else { %>
-			<div id='myPhoto' class='photoL'>PIC</div>
-			<div id='myName' class='textL'>shozo.ueno</div>
-			<div id='myEmail' class='textS'>shozo.ueno@smikiegames.com</div>
-			<div id='myLogout' class='textS'>
-				<a href="/logout">Logout</a>
-			</div>
+				<div id='myPhoto'	class='photoL'>PIC</div>
+				<div id='myName'	class='textL'>shozo.ueno</div>
+				<div id='myEmail'	class='textS'>shozo.ueno@smikiegames.com</div>
+				<div id='myComment' class='textS'>まっからん</div>
+				<div id='myLogout'	class='textS'>
+					<a href="/logout">Logout</a>
+				</div>
 			<% } %>
 		</div>
 			<!--- Friend List -->
 			<div id="friendBase" class='baseBox'>
+				friend
 			</div>
 			<!--- Room List -->
 			<div id="roomBase" class='baseBox'>
+				room
 			</div>
 			<!--- chat -->
 			<div id="chatBase" class='baseBox'>
+				chat
 			</div>
 			<!--- ManageFriend -->
 			<div id="manageBase" class='baseBox'>
+				manage
 			</div>
 	</div>
 	<% if (user){ %>

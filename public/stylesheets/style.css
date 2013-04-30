@@ -51,6 +51,16 @@ a {
 	width:66px;
 	border:1px solid #F00;
 }
+.photoM {
+	position:absolute;
+	height:48px;
+	width:48px;
+}
+.photoS {
+	position:absolute;
+	height:32px;
+	width:32px;
+}
 .textL {
 	position:absolute;
 	height:20px;
@@ -82,6 +92,11 @@ a {
 	left:68px;
 	width:192px;
 }
+#myComment {
+	top:36px;
+	left:68px;
+	width:192px;
+}
 #myLogout {
 	top:0px;
 	left:260px;
@@ -89,17 +104,30 @@ a {
 }
 .baseBox {
 	position:absolute;
-	top:80px;
+	top:56px;
 	left:1px;
 	width:308px;
-	height:400px;
+	height:366px;
 	border:1px solid #F00;
 	display:none; 
 }
-/* chatBase はtop座標１ｐｘ */
-#friendBase	{ top:140px;}
-#roomBase	{ top:140px;}
-#manageBase	{ top:140px;}
+/* chatBase はtop座標1px heightプラス54px */
+#chatBase	{ height:436px;}
+#friendBase	{ top:126px;}
+#roomBase	{ top:126px;}
+#manageBase	{ top:126px;}
+
+/* topとheightはアイテム固有	*/
+.listDock {
+	position:absolute;
+	left:0px;
+	width:308px;
+}
+/* photoクラスと併用 */
+.listPhoto {
+	top:2px;
+	left:2px;
+}
 
 /* 以下一時的に未使用 */
 .basebox {

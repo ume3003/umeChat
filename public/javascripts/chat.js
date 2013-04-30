@@ -1,5 +1,13 @@
 $(function(){
 	var socket = io.connect()
+	/*	new val */
+		,i
+		,tabIndex = 0
+		,$tabItem = {}
+		,$tabBase = {}
+		,$listItem = {}
+		,$header
+	/*	old val */	
 		,members = {}
 		,currentRoomId = 0
 		,rooms = []
@@ -145,9 +153,23 @@ $(function(){
 	/*
 	$('#roomBtn').css('font-weight','bold');	
 	$('#friendBase').hide();
-*/
+	*/
+	// DOMアイテムをキャッシュ
+	$header		= $('#headers');
+	$tabItem[0] = $('#friendTab');
+	$tabItem[1] = $('#roomTab');
+	$tabItem[2] = $('#chatTab');
+	$tabItem[3] = $('#manageTab');
+
+	$tabBase[0] = $('#friendBase');
+	$tabBase[1] = $('#roomBase');
+	$tabBase[2] = $('#chatBase');
+	$tabBase[3] = $('#manageBase');
+	// Friendタブを作成
+	$tabBase[0].show();
+
 	// UIイベントハンドラ
-	$('.tabPage').hover(
+	$('div.tabPage').hover(
 		function(){
 			$(this).css({'background-color':'gray','cursor':'pointer'});// in Action
 		},
@@ -155,6 +177,24 @@ $(function(){
 			$(this).css({'background-color':'white','cursor':'normal'});// out Action
 		}
 	);
+	for(i = 0;i < 4;i++){
+		(function(arg){
+			$tabItem[arg].click(function(){
+				if(arg !== tabIndex){
+					$tabBase[tabIndex].hide();
+					tabIndex = arg;
+					$tabBase[arg].show();
+					if(arg === 2){
+						$header.hide();
+					}
+					else{
+						$header.show();
+					}
+				}
+			});
+		})(i);
+	}
+
 	// チャットルームリストを表示
 	$('#roomBtn').click(function(){
 		if(currentMode === 1){
