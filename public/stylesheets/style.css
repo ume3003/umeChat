@@ -50,16 +50,22 @@ a {
 	height:66px;
 	width:66px;
 	border:1px solid #F00;
+	background-position:center top;
+	background-size	:cover;
 }
 .photoM {
 	position:absolute;
 	height:48px;
 	width:48px;
+	background-position:center top;
+	background-size	:cover;
 }
 .photoS {
 	position:absolute;
 	height:32px;
 	width:32px;
+	background-position:center top;
+	background-size	:cover;
 }
 .textL {
 	position:absolute;
@@ -102,8 +108,21 @@ a {
 	left:260px;
 	width:40px;
 }
+.flPhoto {
+	top:2px;
+	left:2px;
+}
+.flName {
+	top:0px;
+	left:54px;
+}
+.flComm {
+	top:20px;
+	left:54px;
+}
 .baseBox {
 	position:absolute;
+	overflow:auto;
 	top:56px;
 	left:1px;
 	width:308px;
@@ -119,9 +138,11 @@ a {
 
 /* topとheightはアイテム固有	*/
 .listDock {
-	position:absolute;
+/*	position:absolute;*/
+	position:relative;
+
 	left:0px;
-	width:308px;
+	width:288px;
 }
 /* photoクラスと併用 */
 .listPhoto {
@@ -129,7 +150,9 @@ a {
 	left:2px;
 }
 
+
 /* 以下一時的に未使用 */
+/*
 .basebox {
 		position :absolute;
 }
@@ -146,13 +169,14 @@ a {
 	position :absolute;
 	left:1px;
 	height:24px;
-	width:300px;
+	width:280px;
 	font: 20px "Lucida Grande", Helvetica, Arial,sans-serif;
 }
 .chat {
 	position : absolute;
 	left:2px;
 	top:2px;
-	width:300px;
+	width:280px;
 	height:440px;
 }
+*/

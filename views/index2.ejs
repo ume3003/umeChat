@@ -4,14 +4,17 @@
 	<meta charset="utf-8" />
 	<title><%= title %></title>
 	<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+	<link rel='stylesheet' href='/stylesheets/jquery.jscrollpane.css' />
 	<link rel='stylesheet' href='/stylesheets/style.css' />
 	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script type="text/javascript" src="/javascripts/jquery.jscrollpane.min.js"></script>
+		<script type="text/javascript" src="/javascripts/jquery.mousewheel.min.js"></script>
 </head>
 <body>
 	<div id="basement" class='basement'>
 		<!--- Tab -->
 		<div id="selectTab" class='tabBox'>
-			<div id='friendTab' class='tabPage'>Friend</div>
+			<div id='friendTab' class='tabPage'>friend</div>
 			<div id='roomTab'	class='tabPage'>Room</div>
 			<div id='chatTab'	class='tabPage'>chat</div>
 			<div id='manageTab' class='tabPage'>Manage</div>
@@ -21,7 +24,7 @@
 			<% if(!user){ %>
 				<a href="/auth/google">Sign On with Google</a>
 			<% } else { %>
-				<div id='myPhoto'	class='photoL'>PIC</div>
+				<div id='myPhoto'	class='photoL' style="background-image:url(/images/macallan.jpg);background-position:center top;background-size:cover">PIC</div>
 				<div id='myName'	class='textL'>shozo.ueno</div>
 				<div id='myEmail'	class='textS'>shozo.ueno@smikiegames.com</div>
 				<div id='myComment' class='textS'>まっからん</div>
@@ -32,7 +35,6 @@
 		</div>
 			<!--- Friend List -->
 			<div id="friendBase" class='baseBox'>
-				friend
 			</div>
 			<!--- Room List -->
 			<div id="roomBase" class='baseBox'>
