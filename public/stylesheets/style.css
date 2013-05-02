@@ -44,6 +44,7 @@ a {
 	width:308px;
 	left:1px;
 	border:1px solid #F00;
+	display:none;
 }
 .photoL {
 	position:absolute;
@@ -84,6 +85,22 @@ a {
 	font: 12px "Lucida Grande", Helvetica, Arial, sans-serif;
 	font-weight:'normal';
 }
+.textEllipsis {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	-webkit-text-overflow: ellipsis;
+	-o-text-overflow: ellipsis;
+}
+.textDetail {
+	position:absolute;
+	background-color:#99cc00;
+	width:160px;
+	font: 12px "Lucida Grande", Helvetica, Arial, sans-serif;
+	border:1px solid #F00;
+	display:none;
+	z-index:100;
+}
 #myPhoto {
 	top:0px;
 	left:0px;
@@ -119,28 +136,44 @@ a {
 .flComm {
 	top:20px;
 	left:54px;
+	width:180px;
+}
+.rmTime {
+	top:0px;
+	left:240px;
+}
+.rmCount { 
+	top:0px;
+}
+.mnName {
+	top:8px;
+	left:54px;
+}
+.chMsg {
+	top:0px;
+	left:54px;
+}
+.mnStatus {
+	top:8px;
+	left:200px;
+	width:70px;
+	height:20px;
+	border:1px solid #F00;
 }
 .baseBox {
 	position:absolute;
 	overflow:auto;
-	top:56px;
+	top:126px;
 	left:1px;
 	width:308px;
 	height:366px;
 	border:1px solid #F00;
 	display:none; 
 }
-/* chatBase はtop座標1px heightプラス54px */
-#chatBase	{ height:436px;}
-#friendBase	{ top:126px;}
-#roomBase	{ top:126px;}
-#manageBase	{ top:126px;}
 
 /* topとheightはアイテム固有	*/
 .listDock {
-/*	position:absolute;*/
 	position:relative;
-
 	left:0px;
 	width:288px;
 }

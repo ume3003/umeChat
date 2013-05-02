@@ -1,14 +1,5 @@
 $(function(){
 	var socket = io.connect()
-	/*	new val */
-		,i
-		,tabIndex = 0
-		,$tabItem = {}
-		,$tabBase = {}
-		,$header
-		,$friendItems = {}
-		,$roomItems = {}
-	/*	old val */	
 		,members = {}
 		,currentRoomId = 0
 		,rooms = []
@@ -156,22 +147,142 @@ $(function(){
 	$('#friendBase').hide();
 	*/
 // ここから
-	var changeTab = function(arg,callback){
-		if(arg !== tabIndex && tabIndex >= 0 && tabIndex < 4){
-			$tabBase[tabIndex].hide();
-			tabIndex = arg;
-			$tabBase[arg].show();
-			if(arg === 2){
-				$header.hide();
+	var 
+	/*	new val */
+		i
+		,tabIndex = 0					// 現在のタブのインデックス
+		,$tabItem = {}					// タブオブジェクト
+		,$tabBase = {}					// タブごとに表示するオブジェクト
+		,$scroll  = {}					// スクロール用のオブジェクト
+		,$baseHead 	= $('#baseheads')	// 通常のヘッダーオブジェクト
+		,$chatHead	= $('#chatheads')	// チャットページ用のヘッダーオブジェクト
+		,$detailWin	= $('#detailWin')	// 詳細表示用ウィンドウ
+		,$friendItems = {}				// フレンドリストページのフレンドアイテムオブジェクト
+		,$roomItems = {}				// チャットルームリストページのルームアイテムオブジェクト
+		,$chatItems = {}
+		,$manageItems = {}
+		,cssOver = {'background-color':'#aa0','cursor':'pointer'}
+		,cssOut  = {'background-color':'white','cursor':'normal'}
+		// ここから関数
+		// タブを切り替えたときの動作
+		,changeTab = function(arg,callback){
+			if(arg !== tabIndex && tabIndex >= 0 && tabIndex < 4){
+				$tabBase[tabIndex].hide();
+				tabIndex = arg;
+				$tabBase[arg].show();
+				if(arg === 2){
+					$baseHead.hide();
+					$chatHead.show();
+				}
+				else{
+					$baseHead.show();
+					$chatHead.hide();
+				}
+				callback();
 			}
-			else{
-				$header.show();
-			}
-			callback();
 		}
-	}
+		,createItem = function($scroll,num,height,cOver,cOut){
+
+			var $listItem = $scroll[num].append('<div/>').find(':last');	// タブのリスト本体
+			$listItem.addClass('listDock');
+			if(height !== undefined){  $listItem.css({'height':height}); }
+			if(cOver !== undefined){
+				$listItem.hover(
+				function(){	$(this).css(cOver);	},	// in Action
+				function(){	$(this).css(cOut);	});// out Action
+			}
+			return $listItem;
+		},
+		appendFriendItem = function($scroll,i,friend,cOver,cOut){
+			var $listItem = createItem($scroll,0,'40px',cOver,cOut);
+			$listItem.append('<div/>').find(':last')
+				.addClass('listPhoto photoS flPhoto').css('background-image','url(' + friend.pict + ')');
+			$listItem.append('<div/>').find(':last')
+				.addClass('textM flName').text(friend.name);
+			$listItem.append('<div/>').find(':last')
+				.addClass('textS flComm textEllipsis').text(friend.comments);
+			(function(arg){
+				$listItem.click(function(){
+					// TODO:ここはメニュー
+				});
+				$listItem.dblclick(function(){
+					changeTab(2,function(){ // TODO:開いたチャットの内容の取得
+						console.log(arg,friend.id);
+					});
+				});
+			})(i);
+			return $listItem;
+		},
+		appendRoomItem = function($scroll,i,room,cOver,cOut){
+			var $listItem = createItem($scroll,1,'40px',cOver,cOut);
+			$listItem.append('<div/>').find(':last')
+				.addClass('textM flName').text(room.name + ' ' + room.cnt);
+			$listItem.append('<div/>').find(':last')
+				.addClass('listPhoto photoS flPhoto').css('background-image','url(' + room.pict + ')');
+			$listItem.append('<div/>').find(':last')
+				.addClass('textS rmTime').text(room.lastTime);
+			$listItem.append('<div/>').find(':last')
+				.addClass('textS flComm textEllipsis').text(room.lastChat);
+			(function(arg){
+				$listItem.click(function(){
+					// TODO:ここはメニュー
+				});
+				$listItem.dblclick(function(){
+					changeTab(2,function(){	// TODO:ひらいたチャットの内容の取得
+						console.log(arg,room.id);
+					});
+				});
+			})(i);
+			return $listItem;
+		},
+		appendChatItem = function($scroll,i,chat,cOver,cOut){
+			var $listItem = createItem($scroll,2,undefined,cOver,cOut),
+				$msgItem,height;
+			$listItem.append('<div/>').find(':last')
+				.addClass('textS flName').text(chat.name);
+			$listItem.append('<div/>').find(':last')
+				.addClass('listPhoto photoS flPhoto').css('background-image','url(' + chat.pict + ')');
+			$listItem.append('<div/>').find(':last')
+				.addClass('textS rmTime').text(chat.sayTime);
+			$msgItem = $listItem.append('<div/>').find(':last');
+			$msgItem.addClass('textS chMsg').text(chat.msg);
+			console.log($msgItem.attr('scrollHeight'));
+			
+			return $listItem;
+		},
+		appendManageItem = function($scroll,i,manage,cOver,cOut){
+			var $listItem = createItem($scroll,3,'40px',cOver,cOut);
+			$listItem.append('<div/>').find(':last')
+				.addClass('listPhoto photoS flPhoto').css('background-image','url(' + manage.pict + ')');
+			$listItem.append('<div/>').find(':last').addClass('textM mnName').text(manage.name);
+
+			$listItem.$status = $listItem.append('<div/>').find(':last');
+			$listItem.$status.addClass('textM mnStatus').text(manage.status === '0' ? '申請する' : '申請中');
+			(function(arg){
+				$listItem.$status.click(function(){
+					if(manage.status === '0'){
+						// TODO:送信処理
+						manage.status = '1';
+						console.log(manage.id,manage.name,manage.status);
+						changeManageStatus(arg,manage,$listItem);		// TODO:通信のコールバックで指定
+					}
+					else{
+						deleteManageItem($listItem);
+					}
+				});
+			})(i);
+			return $listItem;
+		},
+		changeManageStatus = function(i,manage,$listItem){
+			if(	$listItem.$status !== undefined){
+				$listItem.$status.text(manage.status === '0' ? '申請する' : '申請中');
+			}
+		},
+		deleteManageItem = function($listItem){
+			var parent = $listItem[0].parentNode;
+			parent.removeChild($listItem[0]);
+		};
 	// DOMアイテムをキャッシュ
-	$header		= $('#headers');
 
 	$tabItem[0] = $('#friendTab');
 	$tabItem[1] = $('#roomTab');
@@ -183,68 +294,90 @@ $(function(){
 	$tabBase[2] = $('#chatBase');
 	$tabBase[3] = $('#manageBase');
 
+	// header 作成 
+	// ベースのヘッダーは表示するだけ。データはサーバで埋め込まれる
+	$baseHead.show();
+	// チャットのヘッダーはチャットルームにより毎回埋め込む
+//	createChatHeader();
+	// 各タブアイテムを作成
+	for(i = 0;i < 4;i++){
+		$scroll[i] = $tabBase[i].append('<div/>').find(':last');
+	}
 	// Friendタブを作成
+	// サンプルアイテム
 	var testFriends = [
-	{'id':'001','name':'上野　彰一','comments':'マッカラン'		,'pict':'/images/macallan.jpg'},
-	{'id':'002','name':'上野　彰二','comments':'ストロングゼロ'	,'pict':'/images/strongzero.jpg'},
-	{'id':'003','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-	{'id':'003','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-	{'id':'003','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-	{'id':'003','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-	{'id':'003','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-	{'id':'003','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-	{'id':'003','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-	{'id':'003','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
+		{'id':'001','name':'上野　彰一','comments':'マッカラン'		,'pict':'/images/macallan.jpg'},
+		{'id':'002','name':'上野　彰二','comments':'ストロングゼロ'	,'pict':'/images/strongzero.jpg'},
+		{'id':'003','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
+		{'id':'004','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
+		{'id':'005','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
+		{'id':'006','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
+		{'id':'007','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
+		{'id':'008','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
+		{'id':'009','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
+		{'id':'010','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
 	];
+	var testRooms = [
+		{'id':'001','name':'上野の部屋','cnt':2,'lastChat':'マッカラン','lastTime':'16:00','pict':'/images/macallan.jpg'},
+		{'id':'002','name':'上野　彰三','cnt':5,'lastChat':'マッカラン','lastTime':'昨日','pict':'/images/macallan.jpg'},
+	];
+	var testManages = [
+		{'id':'001','name':'上野　彰一','status':'0'	,'pict':'/images/macallan.jpg'},
+		{'id':'002','name':'上野　彰二','status':'0'	,'pict':'/images/strongzero.jpg'},
+	];
+	var testMessages = [
+		{'id':'001','name':'上野　彰一','sayTime':'16:1'	,'pict':'/images/macallan.jpg','msg':'チャットのメッセージ。ながい文章だとどうなるか。二行三行四行もっとテキストが必要。これでどうだろうか。このくらい。'},
+		{'id':'002','name':'上野　彰二','sayTime':'昨日'	,'pict':'/images/strongzero.jpg','msg':'それなんてくそげ'},
+	]
 	$tabBase[0].hide();
-	var $scroll = $tabBase[0].append('<div/>').find(':last');
 	for(i=0;i < testFriends.length;i++){
-		var $listItem = $scroll.append('<div/>').find(':last');	// タブのリスト本体
-		$listItem.addClass('listDock');
-		$listItem.css({'height':'50px'});
-		$listItem.hover(
-			function(){
-				$(this).css({'background-color':'#aa0','cursor':'pointer'});// in Action
-			},
-			function(){
-				$(this).css({'background-color':'white','cursor':'normal'});// out Action
-			}
-		);
-		(function(arg){
-			$listItem.click(function(){
-				// ここはメニュー
-			});
-			$listItem.dblclick(function(){
-				changeTab(2,function(){
-					console.log(arg,testFriends[arg].id);
-				});
-			});
-		})(i);
-		$listItem.append('<div>').find(':last')
-			.addClass('listPhoto photoS flPhoto').css('background-image','url(' + testFriends[i].pict + ')');
-		$listItem.append('<div>').find(':last')
-			.addClass('textM flName').text(testFriends[i].name);
-		$listItem.append('<div>').find(':last')
-			.addClass('textS flComm').text(testFriends[i].comments);
-		$friendItems[i] = $listItem;
+		$friendItems[i] = appendFriendItem($scroll,i,testFriends[i],cssOver,cssOut);
 	}
 	$tabBase[0].show();
-	$tabBase[0].jScrollPane(
-		{	verticalDragMinHeight: 20,
-			verticalDragMaxHeight: 20,
-			horizontalDragMinWidth: 20,
-			horizontalDragMaxWidth: 20}
-	);	
+	// roomタブを作成
+	for(i = 0 ; i < testRooms.length;i++){
+		$roomItems[i] = appendRoomItem($scroll,i,testRooms[i],cssOver,cssOut);
+	}
+	// manageタブを作成
+	for(i = 0;i < testManages.length;i++){
+		$manageItems[i] = appendManageItem($scroll,i,testManages[i],cssOver,cssOut);
+	}
+	// chatタブを作成
+	// この時点では作成しない
+	// サンプル
+	for(i = 0;i < testMessages.length;i++){
+		$chatItems[i] = appendChatItem($scroll,i,testMessages[i],cssOver,cssOut);
+	}
+	// イベントハンドラ
 	$('div.tabPage').hover(	// UIイベントハンドラ
-		function(){		$(this).css({'background-color':'gray','cursor':'pointer'});	},// in Action
-		function(){		$(this).css({'background-color':'white','cursor':'normal'});	}// out Action
+		function(){		$(this).css(cssOver);	},// in Action
+		function(){		$(this).css(cssOut);	}// out Action
 	);
+	$('div.textEllipsis').hover(
+		function(){ 
+			$detailWin.text($(this).text());
+			var pos = $(this).offset();
+			$detailWin.css({'top': pos.top + $(this).height() + 'px','left':(pos.left + 10) + 'px'});
+			$detailWin.show();
+		},
+		function(){
+			$detailWin.hide();
+
+		});
 	for(i = 0;i < 4;i++){		// タブ切り替え
+		$tabBase[i].jScrollPane(
+			{	verticalDragMinHeight: 20,
+				verticalDragMaxHeight: 20,
+				horizontalDragMinWidth: 20,
+				horizontalDragMaxWidth: 20}
+		);	
 		(function(arg){
 			$tabItem[arg].click(function(){	changeTab(arg,function(){}); });
 		})(i);
 	}
+////////////////////////////////////////////
 // 再作成
+// ////////////////////////////
 	// チャットルームリストを表示
 	$('#roomBtn').click(function(){
 		if(currentMode === 1){

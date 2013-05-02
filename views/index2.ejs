@@ -20,33 +20,42 @@
 			<div id='manageTab' class='tabPage'>Manage</div>
 		</div>
 		<!--- Header -->
-		<div id="headers" class='headerBox'>
-			<% if(!user){ %>
+		<% if(!user){ %>
+			<div id="baseheads" class='headerBox' style='display:block'>
 				<a href="/auth/google">Sign On with Google</a>
-			<% } else { %>
+			</div>
+		<% } else { %>
+			<div id="baseheads" class='headerBox'>
 				<div id='myPhoto'	class='photoL' style="background-image:url(/images/macallan.jpg);background-position:center top;background-size:cover">PIC</div>
-				<div id='myName'	class='textL'>shozo.ueno</div>
-				<div id='myEmail'	class='textS'>shozo.ueno@smikiegames.com</div>
-				<div id='myComment' class='textS'>まっからん</div>
+				<div id='myName'	class='textL'><%= user.displayName %></div>
+				<div id='myEmail'	class='textS'><%= user.email %></div>
+				<div id='myComment' class='textS textEllipsis'>サンプルコメント。長い文字列だとどうなるんだろうか。ちょっと書いてみる。このくらいでいいか。</div>
 				<div id='myLogout'	class='textS'>
 					<a href="/logout">Logout</a>
 				</div>
-			<% } %>
+			</div>
+		<% } %>
+		<!-- chat header -->
+		<div id='chatheads' class='headerBox'>
+				<div id='myLogout'	class='textS'>
+					<a href="/logout">Logout</a>
+				</div>
 		</div>
+		<!-- header end -->
 			<!--- Friend List -->
 			<div id="friendBase" class='baseBox'>
 			</div>
 			<!--- Room List -->
 			<div id="roomBase" class='baseBox'>
-				room
 			</div>
 			<!--- chat -->
 			<div id="chatBase" class='baseBox'>
-				chat
 			</div>
 			<!--- ManageFriend -->
 			<div id="manageBase" class='baseBox'>
-				manage
+			</div>
+			<!-- detailWin -->
+			<div id='detailWin' class='textDetail'>
 			</div>
 	</div>
 	<% if (user){ %>
