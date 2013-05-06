@@ -5,12 +5,13 @@
 	<title><%= title %></title>
 	<meta name="viewport" content="width=device-width,initial-scale=1.0" />
 	<link rel='stylesheet' href='/stylesheets/jquery.jscrollpane.css' />
-	<link rel='stylesheet' href='/stylesheets/style.css' />
+	<link rel='stylesheet' href='/stylesheets/rq-style.css' />
+	<% if(user){ %>
+		<script data-main="/javascripts/rq-main" src="/javascripts/require.js"></script>
+	<% } else { %>
+		<script data-main="/javascripts/rq-sub" src="/javascripts/require.js"></script>
+	<% } %>
 
-	<script type='text/javascript' src='http://code.jquery.com/jquery-1.9.1.js'></script>
-		<script type="text/javascript" src="/javascripts/jquery.corner.js"></script>
-		<script type="text/javascript" src="/javascripts/jquery.jscrollpane.min.js"></script>
-		<script type="text/javascript" src="/javascripts/jquery.mousewheel.min.js"></script>
 </head>
 <body>
 	<div id="basement" class='basement'>
@@ -24,7 +25,9 @@
 		<!--- Header -->
 		<% if(!user){ %>
 			<div id="baseheads" class='headerBox' style='display:block'>
-				<a href="/auth/google">Sign On with Google</a>
+				<div id='myLogin'	class='textS'>
+					<a href="/auth/google">Sign On with Google</a>
+				</div>
 			</div>
 		<% } else { %>
 			<div id="baseheads" class='headerBox'>
@@ -71,12 +74,9 @@
 			</div>
 	</div>
 			<!-- dialog -->
-			<div id='dlg' title='test'>
-				<p id='dlgText'>てすと</p>
+			<div id='dlg'>
+				<p id='dlgText'></p>
+				<div id='dlgBtnBase'></div>
 			</div>
-	<% if (user){ %>
-		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
-		<script type="text/javascript" src="/javascripts/chat.js"></script>
-	<% } %>
 </body>
 </html>

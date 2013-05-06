@@ -16,6 +16,8 @@ var
 			displayName	: String,
 			email		: String,
 			room_ids	: [String],
+			comment		: String,
+			photo		: String,
 			friends		: [FriendSchema],
 			created		: {type:Date,default:Date.now},
 			lastAccess	: {type:Date,default:Date.now}
@@ -217,6 +219,8 @@ exports.findUser = function(query,callback){
 			size	= docs.length;
 		if(size > 0){
 			uData	= docs[0];
+			uData.photo = '/images/macallan.jpg';
+			uData.comment = 'サンプルコメント。長い文字列だとどうなるんだろうか。ちょっと書いてみる。このくらいでいいか。';
 		}
 		callback(uData);
 	});

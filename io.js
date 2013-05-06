@@ -11,7 +11,7 @@ exports.init = function()
 	var 
 		sKey	= so.app.get('secretKey'),
 		csKey	= so.app.get('cookieSessionKey');
-	io = require('socket.io').listen(so.server,{log : false});
+	io = require('socket.io').listen(so.server,{log : true});
 	so.io = io;
 	io.set('authorization',function(handshakeData,callback){
 	if(handshakeData.headers.cookie){
@@ -21,8 +21,9 @@ exports.init = function()
 
 		cookie = so.connect.utils.parseSignedCookies(cookie,sKey);
 		sessionID = cookie[csKey];
-
+		console.log('in store sessionID ',sessionID);
 		so.store.get(sessionID,function(err,session){
+			console.log('in store',session.userID);
 			if(err){
 				callback(err.message,false);
 			}

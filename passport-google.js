@@ -7,10 +7,8 @@ exports.init = function()
 		GoogleStrategy	= require('passport-google').Strategy;
 
 	passport.serializeUser(function(user,done){
-		console.log("serialize" , user);
 		// ここでDBに保存
 		db.findUser({email : user.emails[0].value},function(userDB){
-			console.log('userDB',userDB);
 			if(userDB === undefined){	// 新規
 				console.log(' new user ');
 				db.addUser(user,function(err,newUser){
@@ -26,9 +24,7 @@ exports.init = function()
 	});
 
 	passport.deserializeUser(function(objID,done){
-		console.log("deserialize" , objID);
 		db.findUser({_id : objID},function(userDB){
-			console.log('find user ',userDB);
 			done(null,userDB);
 		});
 	});
@@ -41,7 +37,6 @@ exports.init = function()
 		},
 		function(identifier,profile,done){
 			process.nextTick(function(){
-				console.log("in google strategy",profile);
 				profile.identifier = identifier;
 				profile.type = 'Google';
 				return done(null,profile); // ここのprofileがreq.userとしてみることができる
@@ -66,7 +61,6 @@ exports.addRoutes = function()
 		passport.authenticate('google', { failureRedirect: '/login' }),
 		function(req, res) {
 			if(req.user && req.user.displayName){
-				console.log('login success for ggl aaaa' ,req.session.passport,req.user);
 				req.session.user = req.user;
 				req.session.user.id = req.session.passport.user;
 				req.session.userID = req.user.displayName;

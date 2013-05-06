@@ -7,6 +7,48 @@ body {
 a {
   color: #00B7FF;
 }
+#dlg {
+	position : absolute;
+	top:2px;
+	left:2px;
+	width:312px;
+	height:496px;
+	z-index:1000;
+	background-color:#555;
+	border:3px solid #000;
+	opacity : 0.8;
+	display:none;
+}
+#dlgText {
+	position : absolute;
+	top:200px;
+	left:10px;
+	width:300px;
+	text-align:center;
+	z-index:1001;
+}
+#dlgBtnBase {
+	position : absolute;
+	top : 440px;
+	left:2px;
+	width:300px;
+	height:22px;
+	z-index:1001;
+}
+#dlgBtn {
+	position : absolute;
+	top:1px;
+	height:20px;
+	border:0.5px solid #000;
+	background-color:white;
+	text-align:center;
+	cursor:normal;
+	z-index:1002;
+}
+#dlgBtn:hover {
+	background-color:#aa0;
+	cursor:pointer;
+}
 .basement {
 	position :relative;
 	top:2px;
@@ -55,6 +97,7 @@ a {
 	border:1px solid #F00;
 	display:none;
 }
+
 /*
  *  photoのcss
  */
@@ -325,6 +368,9 @@ a {
 	background-color:#aa0;
 	cursor:pointer;
 }
+
+
+
 /* topとheightはアイテム固有	*/
 .listDock {
 	position:relative;
@@ -350,34 +396,3 @@ a {
 	top:2px;
 	left:2px;
 }
-
-
-/* 以下一時的に未使用 */
-/*
-.basebox {
-		position :absolute;
-}
-.box {
-	position :absolute;
-	border:1px solid #000;
-}
-.btnbox {
-	position :absolute;
-	border:1px solid #000;
-	text-align:center;
-}
-.list {
-	position :absolute;
-	left:1px;
-	height:24px;
-	width:280px;
-	font: 20px "Lucida Grande", Helvetica, Arial,sans-serif;
-}
-.chat {
-	position : absolute;
-	left:2px;
-	top:2px;
-	width:280px;
-	height:440px;
-}
-*/
