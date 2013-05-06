@@ -22,8 +22,9 @@ a {
 #dlgText {
 	position : absolute;
 	top:200px;
-	left:10px;
+	left:2px;
 	width:300px;
+	background-color:white;
 	text-align:center;
 	z-index:1001;
 }
@@ -35,17 +36,16 @@ a {
 	height:22px;
 	z-index:1001;
 }
-#dlgBtn {
+.dlgBtn {
 	position : absolute;
-	top:1px;
+	top:0px;
 	height:20px;
-	border:0.5px solid #000;
 	background-color:white;
 	text-align:center;
 	cursor:normal;
 	z-index:1002;
 }
-#dlgBtn:hover {
+.dlgBtn:hover {
 	background-color:#aa0;
 	cursor:pointer;
 }

@@ -1,11 +1,11 @@
 require.config({
 	paths: {		// 使用するファイル
-		 'jquery' : '//code.jquery.com/jquery-1.9.1'
-		,'jquery.corner' : '/javascripts/jquery.corner'
-		,'jquery.mousewheel' : '/javascripts/jquery.mousewheel.min'
-		,'jquery.jscrollpane' : '/javascripts/jquery.jscrollpane.min'
-		,'ioc' : '/javascripts/rq-io'
-		,'uiparts' : '/javascripts/rq-parts'
+		 'jquery' : '//code.jquery.com/jquery-1.9.1',
+		'jquery.corner' : '/javascripts/jquery.corner',
+		'jquery.mousewheel' : '/javascripts/jquery.mousewheel.min',
+		'jquery.jscrollpane' : '/javascripts/jquery.jscrollpane.min',
+		'ioc' : '/javascripts/rq-io',
+		'uiparts' : '/javascripts/rq-parts'
 	},
 	shim:	{		// 依存関係
 		'jquery.corner' : ['jquery'],
@@ -15,24 +15,48 @@ require.config({
 });
 define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],function(ioc,uiparts,$){
 	var
-		i
-	,	tabIndex = -1
-	,	$tabItem
-	,	$scroll  = {}					// スクロール用のオブジェクト
-	,	$tabBase	= [$('#friendBase'),$('#roomBase'),$('chatBase'),$('#manageBase')]
-	,	$baseHead 	= $('#baseheads')	// 通常のヘッダーオブジェクト
-	,	$chatHead	= $('#chatheads')	// チャットページ用のヘッダーオブジェクト
-	,$chatBox		= $('#chatBox')
-		,$chatEntry = $('#chatEntry')
-		,$chatCommit= $('#chatCommit')
-	,$manageBox		= $('#newFriendBox')
-		,$manageInput = $('#newFriend')
-		,$manageBtn = $('#newFriendAdd')
-	,$friendItems = {}				// フレンドリストページのフレンドアイテムオブジェクト
-	,$roomItems = {}				// チャットルームリストページのルームアイテムオブジェクト
-	,$chatItems = {}
-	,$manageItems = {}
-	,
+		i,
+		tabIndex = -1,
+		$tabItem,
+		$scroll  = {},					// スクロール用のオブジェクト
+		$tabBase	= [$('#friendBase'),$('#roomBase'),$('chatBase'),$('#manageBase')],
+		$baseHead 	= $('#baseheads'),	// 通常のヘッダーオブジェクト
+		$chatHead	= $('#chatheads'),	// チャットページ用のヘッダーオブジェクト
+	$chatBox		= $('#chatBox'),
+		$chatEntry = $('#chatEntry'),
+		$chatCommit= $('#chatCommit'),
+	$manageBox		= $('#newFriendBox'),
+		$manageInput = $('#newFriend'),
+		$manageBtn = $('#newFriendAdd'),
+	$friendItems = {},				// フレンドリストページのフレンドアイテムオブジェクト
+	$roomItems = {},				// チャットルームリストページのルームアイテムオブジェクト
+	$chatItems = {},
+	$manageItems = {},
+	prepareAddFriendbox = function(){
+		$manageBtn.click(function(){
+			var addFriend = $manageInput.val();
+			console.log(addFriend);
+			if(addFriend.length > 0){
+				uiparts.showDlg(
+					{text :  addFriend + 'を検索します',
+						btns: [	{text : 'ok',callback : 
+							function(){ 
+								console.log(addFriend);
+								ioc.findFriend(addFriend);
+								uiparts.closeDlg();
+								$manageInput.val('');
+							}},
+							{text : 'cancel',callback : 
+							function(){
+								console.log('cancelled');
+								uiparts.closeDlg();
+								$manageInput.val('');
+							}}
+						]
+					});
+			}
+		});
+	},
 	init = function(){
 		console.log('init');
 		$tabItem = [$('#friendTab').corner(),$('#roomTab').corner(),$('#chatTab').corner(),$('#manageTab').corner()];
@@ -48,7 +72,8 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		getList(1,false);
 		getList(3,false);
 		$baseHead.show();
-
+		
+		prepareAddFriendbox();
 	},
 	createItem = function(num,height,listClass){
 		var $listItem = $scroll[num].append('<div/>').find(':last');	// タブのリスト本体
@@ -58,18 +83,29 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	},
 	setFriend = function(i,doc){
 		var $listItem = createItem(0,'52px','listDocBox');
-		console.log('setFriend',i,doc);
 		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + doc.pict + ')');
 		$listItem.append('<div/>').find(':last').addClass('textM flName').text(doc.name);
 		$listItem.append('<div/>').find(':last').addClass('textS flComm textEllipsis').text(doc.comments);
 		(function(arg){
 			$listItem.click(function(){
 				// TODO:ここはメニュー
-				uiparts.createDlg();
-				uiparts.showDlg();
+				uiparts.showDlg(
+					{text : doc.name ,
+						btns: [	{text : 'ok',callback : 
+							function(){ 
+								console.log(doc.comments);
+								uiparts.closeDlg();
+							}},
+							{text : 'cancel',callback : 
+							function(){
+								console.log(doc.name);
+								uiparts.closeDlg();
+							}}
+						]
+					});
+					
 			});
 			$listItem.dblclick(function(){
-				uiparts.closeDlg();
 				showTab(2,function(){ // TODO:開いたチャットの内容の取得
 					console.log(arg,doc.id);
 				});
@@ -134,6 +170,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 //					changeManageStatus(arg,manage,$listItem);		// TODO:通信のコールバックで指定
 				}
 				else{
+					console.log('status change');
 //					deleteManageItem($listItem);
 				}
 			});
@@ -249,9 +286,10 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			tabIndex = arg;
 			callback();
 		}
-	}
+	};
 	return {
 		init : init,
-		showTab : showTab
+		showTab : showTab,
+		setManage : setManage
 	};
 });

@@ -22,7 +22,6 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			i,
 			btnCnt = 1,
 			btnWidth = 300;
-		console.log(btns);
 		btnCnt = btns.length;
 		btnWidth = btnWidth / btnCnt;
 		for(i = 0 ; i < btnCnt ; i++){
@@ -30,18 +29,19 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			$btn = $dlgBtnBase.append('<div/>').find(':last');
 			$btn.addClass('dlgBtn');
 			$btn.css('left', (i * btnWidth) + 'px');
+			$btn.css('width', btnWidth + 'px');
 			$btn.corner();
-			$btn.click(btns[i].callback());
+			(function(arg){
+				$btn.click(
+					function(){
+						btns[arg].callback();
+					});
+			})(i);
 			$btn.text(btns[i].text);
 		}
 	},
 	makeText = function(dlgText){
 		$dlgText.text(dlgText);
-	},
-	createDlg = function(param){
-		$dlg.dblclick(function(){
-			closeDlg();
-		});
 	},
 	showDlg = function(param){
 		if(param === undefined){
@@ -54,7 +54,9 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		$dlg.show();
 	},
 	closeDlg = function(){
+		console.log('closeDlg');
+		$dlgBtnBase.empty();
 		$dlg.hide();
 	};
-	return {	createDlg : createDlg,showDlg : showDlg,	closeDlg : closeDlg};
+	return {	showDlg : showDlg,	closeDlg : closeDlg};
 });

@@ -41,10 +41,8 @@ exports.init = function()
 				profile.type = 'Google';
 				return done(null,profile); // ここのprofileがreq.userとしてみることができる
 			});
-		})
-	);
-
-}
+		}));
+};
 exports.addRoutes = function()
 {
 	var passport = so.passport,

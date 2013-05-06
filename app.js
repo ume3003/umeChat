@@ -2,11 +2,11 @@
  * Module dependencies.
  */
 var 
-	 so				= require('./shareObj')
-	,io				= require('./io')
-	,auth			= require('./passport-google')
-	,db				= require('./mongo')
-	;
+	 so				= require('./shareObj'),
+	io				= require('./io'),
+	auth			= require('./passport-google'),
+	db				= require('./mongo');
+	
 
 so.init();
 db.init();
@@ -24,11 +24,11 @@ so.app.use(so.express.bodyParser());
 so.app.use(so.express.cookieParser(so.app.get('secretKey')));    // Verの変更によりこっちでうける
 so.app.use(so.express.methodOverride());
 so.app.use(so.express.session({
-   key : so.app.get('cookieSessionKey')
-  ,store  : so.store
-  ,cookie : { maxPage : 1000 * 60 * 60 * 24 * 7}  // maxAgeを指定することで、redius内のデータもこの期間は保持される
-  })
-);
+   key : so.app.get('cookieSessionKey'),
+  store  : so.store,
+  cookie : { maxPage : 1000 * 60 * 60 * 24 * 7}  // maxAgeを指定することで、redius内のデータもこの期間は保持される
+  }));
+
 so.app.use(so.passport.initialize());
 so.app.use(so.passport.session());
 so.app.use(so.app.router);

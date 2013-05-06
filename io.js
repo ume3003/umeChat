@@ -1,10 +1,10 @@
 /**
  * Module dependencies.
  */
-var		so	= require('./shareObj')	
-	,	db	= require('./mongo')
-	,	io
-	,	users		= {}
+var		so	= require('./shareObj')	,
+		db	= require('./mongo'),
+		io,
+		users		= {}
 	;
 exports.init = function()
 {
@@ -16,8 +16,8 @@ exports.init = function()
 	io.set('authorization',function(handshakeData,callback){
 	if(handshakeData.headers.cookie){
 	// cookieを取得
-		var sessionID
-			,cookie = require('cookie').parse(decodeURIComponent(handshakeData.headers.cookie));
+		var sessionID,
+			cookie = require('cookie').parse(decodeURIComponent(handshakeData.headers.cookie));
 
 		cookie = so.connect.utils.parseSignedCookies(cookie,sKey);
 		sessionID = cookie[csKey];
@@ -45,7 +45,7 @@ exports.init = function()
 		});
 	}
 	else{
-		return callback('cookie not found',false);
+		callback('cookie not found',false);
 	}
 });
 // user 
@@ -124,4 +124,4 @@ io.sockets.on('connection',function(socket){
 		socket.broadcast.emit('logout',userID);
 	});
 });
-}
+};
