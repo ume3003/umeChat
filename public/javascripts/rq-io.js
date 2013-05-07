@@ -14,7 +14,8 @@ require.config({
 define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],function($){
 	var socket,
 		findFriendCallback = [],
-		getFriendListCallback,
+		getFriendListCallback = undefined,
+		getManageListCallback = undefined,
 	init = function(param){
 		console.log('connect to server');
 		socket = io.connect();
@@ -22,17 +23,29 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			console.log('disconnect');
 			window.location.reload();
 		});
+		socket.on('gotInviteList',function(msg){
+			if(getManageListCallback !== undefined){
+				getManageListCallback(msg.invite);
+				getManageListCallback = undefined;
+			}
+		});
 		socket.on('gotFriendList',function(msg){
 			if(getFriendListCallback !== undefined){
-				console.log('gotFriendList');
 				getFriendListCallback(msg.friends);
 				getFriendListCallback = undefined;
 			}
 		});
 		socket.on('foundFriend',function(msg){
 			if(findFriendCallback[msg.tgt] !== undefined){
-				findFriendCallback[msg.tgt](msg.cnt,
-				{'id':msg.you.user_id,'name':msg.you.email,'status':msg.you.status	,'pict':'/images/macallan.jpg'});
+				if(msg.cnt >= 0){
+					console.log(msg.you);
+					findFriendCallback[msg.tgt](msg.cnt,
+					{'id':msg.you.user_id,'name':msg.you.email,'status':msg.you.status	,'pict':'/images/macallan.jpg'});
+				}
+				else{
+					findFriendCallback[msg.tgt](-1,
+					{'id':undefined,'name':msg.tgt,'status':'0'	,'pict':'/images/macallan.jpg'});
+				}
 				findFriendCallback[msg.tgt] = undefined;
 			}
 		});
@@ -51,25 +64,11 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		}
 	},
 	getFriendList = function(callback){
-		/*
-		var list = [
-			{'id':'001','name':'上野　彰一','comments':'マッカラン'		,'pict':'/images/macallan.jpg'},
-			{'id':'002','name':'上野　彰二','comments':'ストロングゼロ'	,'pict':'/images/strongzero.jpg'},
-			{'id':'003','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-			{'id':'004','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-			{'id':'005','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-			{'id':'006','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-			{'id':'007','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-			{'id':'008','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-			{'id':'009','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'},
-			{'id':'010','name':'上野　彰三','comments':'たま'			,'pict':'/images/tama.jpg'}
-		];*/
+		console.log('getFriendList');
 		if(getFriendListCallback === undefined ){
 			getFriendListCallback = callback;
-			console.log('getFriendList');
 			socket.emit('getFriendList');
 		}
-		//callback(list);
 	},
 	getRoomList = function(callback){
 		var list = [
@@ -83,11 +82,10 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		callback(list);
 	},
 	getManageList = function(callback){
-		var list = [
-			{'id':'001','name':'上野　彰一','status':'0'	,'pict':'/images/macallan.jpg'},
-			{'id':'002','name':'上野　彰二','status':'0'	,'pict':'/images/strongzero.jpg'}
-			];
-		callback(list);
+		if(getManageListCallback === undefined ){
+			getManageListCallback = callback;
+			socket.emit('getInviteList');
+		}
 	};
 	return {
 		init : init,

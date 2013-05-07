@@ -116,6 +116,12 @@ io.sockets.on('connection',function(socket){
 			}
 		});
 	});
+	socket.on('getInviteList',function(msg){
+		console.log('getInviteList');
+		db.getInviteList(user,{$in:['0','1']},function(list){
+			socket.emit('gotInviteList',{invite:list});
+		});
+	});
 	socket.on('findFriend',function(msg){
 		console.log(msg);
 		db.addFriend(user.id,msg.tgt,function(err,me,you){

@@ -77,6 +77,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		}
 		getList(0,true);
 		getList(1,false);
+		console.log('getList 3');
 		getList(3,false);
 		$baseHead.show();
 		
@@ -91,7 +92,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	setFriend = function(i,doc){
 		var $listItem = createItem(0,'52px','listDocBox');
 //		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + doc.pict + ')');
-		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + '/images/maccalan.jpg'  + ')');
+		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + '/images/macallan.jpg'  + ')');
 		$listItem.append('<div/>').find(':last').addClass('textM flName').text(doc.email);
 		$listItem.append('<div/>').find(':last').addClass('textS flComm textEllipsis').text(doc.email);
 		(function(arg){
@@ -164,22 +165,19 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	},
 	setManage = function(i,manage){
 		var $listItem = createItem(3,'52px','listDock');
-		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + manage.pict + ')');
-		$listItem.append('<div/>').find(':last').addClass('textM mnName').text(manage.name);
+		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + '' + ')');
+		$listItem.append('<div/>').find(':last').addClass('textM mnName').text(manage.email);
 
 		$listItem.$status = $listItem.append('<div/>').find(':last');
-		$listItem.$status.addClass('textM mnStatus').text(manage.status === '0' ? '申請する' : '申請中');
+		$listItem.$status.addClass('textM mnStatus').text(manage.stat === '0' ? '申請中' : '申請あり');
 		(function(arg){
 			$listItem.$status.click(function(){
-				if(manage.status === '0'){
+				console.log(manage.id,manage.email,manage.stat);
+				if(manage.stat === '0'){
 					// TODO:送信処理
-					manage.status = '1';
-					console.log(manage.id,manage.name,manage.status);
-//					changeManageStatus(arg,manage,$listItem);		// TODO:通信のコールバックで指定
 				}
 				else{
 					console.log('status change');
-//					deleteManageItem($listItem);
 				}
 			});
 		})(i);
@@ -204,7 +202,6 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		}
 	},
 	createList = function(arg,list,bShow){
-		console.log('create list',arg,list,bShow);
 		if(list !== null && list.length > 0){
 			for(i = 0; i < list.length;i++){
 				addList(arg,i,list[i]);

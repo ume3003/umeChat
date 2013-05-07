@@ -46,7 +46,7 @@ exports.init = function()
 	Room = mongoose.model('Room',RoomSchema);
 };
 // beInvite '0' '1' '2' 2はつかわずにFriendListを使うこと
-exports.getInviteList - function(user,beInvite,callback)
+exports.getInviteList = function(user,beInvite,callback)
 {
 	User.find({_id:user.id,"friends.stat":beInvite},function(err,docs){
 		var i,invites= [],intive;
@@ -63,7 +63,7 @@ exports.getInviteList - function(user,beInvite,callback)
 // 特定のユーザーのフレンドの一覧を返す
 exports.getFriendList = function(user,callback)
 {
-	User.find({_id:user.id},function(err,docs){
+	User.find({_id:user.id,'friends.stat':'2'},function(err,docs){
 		var i,friends = [],friend;
 		if(!err && docs && docs.length > 0 && docs[0].friends){
 			for(i = 0; i < docs[0].friends.length;i++){
@@ -98,7 +98,7 @@ exports.addFriend = function(userId,friendEmail,callback)
 				friend.user_id = passkey.slice(passkey.length - 4);
 			}
 			console.log(targetYou,isUser,passkey);
-			User.find({_id : userId,'friends.email':friendemail},function(err,dumUser){	// 自分のDBへの保存
+			User.find({_id : userId,'friends.email':friendEmail},function(err,dumUser){	// 自分のDBへの保存
 				if(!err){
 					if(dumUser && dumUser.length > 0){		//  該当ユーザーフレンドにいます
 						console.log('same friends change status');
@@ -109,8 +109,9 @@ exports.addFriend = function(userId,friendEmail,callback)
 							existusers[0].friends.push(friend);
 							existusers[0].save(function(err){
 								if(!err){
+									me = existusers[0];
+									console.log('me',me);
 									if(isUser){		// 相手のDBへ保存
-										me = existusers[0];
 										inviteUser.stat = '1';	
 										inviteUser.email = me.email;
 										inviteUser.user_id = me.id;
@@ -127,7 +128,6 @@ exports.addFriend = function(userId,friendEmail,callback)
 						});
 					}
 				}
-				callback('not add',undefined,undefined);
 			});
 		}
 		else{
