@@ -9,7 +9,7 @@ var
 	FriendSchema = new Schema({
 			user_id		: String,
 			email		: String,
-			stat		: String
+			stat		: String		// 0:友人申請中　1:友人申請受け中  2:友人
 	}),
 	UserSchema	= new Schema({
 			user_id		: String,
@@ -45,6 +45,21 @@ exports.init = function()
 	Chat = mongoose.model('Chat',ChatSchema);
 	Room = mongoose.model('Room',RoomSchema);
 };
+// beInvite '0' '1' '2' 2はつかわずにFriendListを使うこと
+exports.getInviteList - function(user,beInvite,callback)
+{
+	User.find({_id:user.id,"friends.stat":beInvite},function(err,docs){
+		var i,invites= [],intive;
+		if(!err && docs && docs.length > 0 && docs[0].friends){
+			for(i = 0;i < docs[0].friends.length;i++){
+				invite = docs[0].friends[i];
+				invites[i] = {id:invite.user_id,email:invite.email,stat:invite.stat};
+			}
+		}
+		callback(invites);
+	});
+};
+
 // 特定のユーザーのフレンドの一覧を返す
 exports.getFriendList = function(user,callback)
 {
@@ -61,42 +76,54 @@ exports.getFriendList = function(user,callback)
 }
 //	user_id		: String,
 //	email		: String,
-//	stat		: String
+//	stat		: String	0,1
 // 特定のユーザーにフレンドを追加する。デフォルトのステータスはinvite
 exports.addFriend = function(userId,friendEmail,callback)
 {
-	User.find({email:friendEmail},function(err0,docs){	// そのフレンドがそもそもユーザーにいるか
-		var	friend = new Friend();
-		if(!err0 && docs && docs.length > 0){
-			friend.user_id = docs[0].id;
-			friend.email = docs[0].email;
-			friend.stat = 'invite';
-
-			User.find({_id : userId},function(err,users){	// いたらDBに登録にいく
-				var i,
-				sameFriend = false;
-				if(!err && users && users.length > 0){
-					if(users[0].friends !== undefined){
-						for(i = 0;i < users[0].friends.length ; i++){
-							if(friend.user_id === users[0].friends[i].user_id){
-								sameFriend = true;
-								break;
-							}
-						}
-					}
-					if(!sameFriend){
-						users[0].friends.push(friend);
-						users[0].save(function(err){
-							if(!err){
-								callback(null,users[0],friend);
-								return;
-							}
-						});
-					}
-					else{
+	User.find({email:friendEmail},function(err0,targetYou){	// そのフレンドがそもそもユーザーにいるか
+		var	friend = new Friend(),			// 自分のテーブルに追加するフレンドの情報
+			inviteUser = new Friend(),		// フレンドのテーブルに追加する自分の情報
+			me ,
+			passkey = '0000',
+			isUser = false;
+		if(!err0 ){
+			friend.stat = '0';
+			friend.email = friendEmail;
+			if(targetYou && targetYou.length > 0){
+				friend.user_id = targetYou[0].id;
+				isUser = true;
+			}
+			else{
+				passkey = '0000' + Math.floor(Math.random() * 10000);
+				friend.user_id = passkey.slice(passkey.length - 4);
+			}
+			console.log(targetYou,isUser,passkey);
+			User.find({_id : userId,'friends.email':friendemail},function(err,dumUser){	// 自分のDBへの保存
+				if(!err){
+					if(dumUser && dumUser.length > 0){		//  該当ユーザーフレンドにいます
 						console.log('same friends change status');
-						exports.changeFriendStatus(userId,friend.user_id,'friend',function(err,user,newFriend){
-							callback(err,user,newFriend);
+						callback('already have such user',undefined,undefined);
+					}
+					else{		// フレンドにいないので追加です
+						User.find({_id : userId},function(err,existusers){	// 自分のDBへの保存
+							existusers[0].friends.push(friend);
+							existusers[0].save(function(err){
+								if(!err){
+									if(isUser){		// 相手のDBへ保存
+										me = existusers[0];
+										inviteUser.stat = '1';	
+										inviteUser.email = me.email;
+										inviteUser.user_id = me.id;
+										targetYou[0].friends.push(inviteUser);
+										targetYou[0].save(function(err2){
+											callback(null,me,friend);
+										});
+									}
+									else{
+										callback(null,me,friend);
+									}
+								}
+							});
 						});
 					}
 				}

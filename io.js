@@ -71,14 +71,13 @@ io.sockets.on('connection',function(socket){
 	/*	会議室ごとに通知に変更する
 	socket.broadcast.emit('join',user);				//会議室全員に自分の入室を通知
 	socket.emit('member',{members : users});		//自分には会議室全員を通知
-	*/
 	db.getJoinRoomList(user,function(RoomList){
 		socket.emit('roomList',{rooms:RoomList});		//会議リストの通知	
 	});
 	db.getFriendList(user,function(friendList){
 		socket.emit('friendList',{friends:friendList});	// 知人リストの通知
 	});
-
+	*/
 
 	socket.on('msg_send',function(msg){	// TODO:ここでルームチェックとルームへのチャットデータの登録を行う
 		socket.to(msg.roomId).emit('msg_push',
@@ -117,7 +116,22 @@ io.sockets.on('connection',function(socket){
 			}
 		});
 	});
-	
+	socket.on('findFriend',function(msg){
+		console.log(msg);
+		db.addFriend(user.id,msg.tgt,function(err,me,you){
+			if(err){
+				socket.emit('foundFriend',{cnt:-1,you:undefined,tgt:msg.tgt});
+			}
+			else{
+				socket.emit('foundFriend',{cnt:me.friends.length,you:you,tgt:msg.tgt});
+			}
+		});
+	});
+	socket.on('getFriendList',function(){
+		db.getFriendList(user,function(friendList){
+			socket.emit('gotFriendList',{friends:friendList});	// 知人リストの通知
+		});
+	});
 	socket.on('disconnect',function(){
 		clearInterval(sessionReloadIntervalID);
 		delete users[userID];

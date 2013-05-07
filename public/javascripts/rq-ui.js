@@ -42,7 +42,14 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 						btns: [	{text : 'ok',callback : 
 							function(){ 
 								console.log(addFriend);
-								ioc.findFriend(addFriend);
+								ioc.findFriend(addFriend,function(num,addedFriend){
+									if(num >= 0){
+										setManage(num,addedFriend);
+									}
+									else{
+										console.log('not foound' , addFriend);
+									}
+								});
 								uiparts.closeDlg();
 								$manageInput.val('');
 							}},
@@ -83,9 +90,10 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	},
 	setFriend = function(i,doc){
 		var $listItem = createItem(0,'52px','listDocBox');
-		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + doc.pict + ')');
-		$listItem.append('<div/>').find(':last').addClass('textM flName').text(doc.name);
-		$listItem.append('<div/>').find(':last').addClass('textS flComm textEllipsis').text(doc.comments);
+//		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + doc.pict + ')');
+		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + '/images/maccalan.jpg'  + ')');
+		$listItem.append('<div/>').find(':last').addClass('textM flName').text(doc.email);
+		$listItem.append('<div/>').find(':last').addClass('textS flComm textEllipsis').text(doc.email);
 		(function(arg){
 			$listItem.click(function(){
 				// TODO:ここはメニュー
@@ -93,12 +101,12 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 					{text : doc.name ,
 						btns: [	{text : 'ok',callback : 
 							function(){ 
-								console.log(doc.comments);
+								console.log(doc.email);
 								uiparts.closeDlg();
 							}},
 							{text : 'cancel',callback : 
 							function(){
-								console.log(doc.name);
+								console.log(doc.email);
 								uiparts.closeDlg();
 							}}
 						]
@@ -107,7 +115,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			});
 			$listItem.dblclick(function(){
 				showTab(2,function(){ // TODO:開いたチャットの内容の取得
-					console.log(arg,doc.id);
+					console.log(arg,doc.user_id);
 				});
 			});
 		})(i);
@@ -284,12 +292,13 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			}
 			// ページインデックスの更新
 			tabIndex = arg;
-			callback();
+			if(callback !== undefined){
+				callback();
+			}
 		}
 	};
 	return {
 		init : init,
 		showTab : showTab,
-		setManage : setManage
 	};
 });
