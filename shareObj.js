@@ -2,6 +2,7 @@
 var config = require('config');
 
 module.exports = {
+	ssIds	: undefined,
 	express : undefined,
 	Session : undefined,
 	server	: undefined,
@@ -28,6 +29,7 @@ module.exports.init = function(){
 	console.log('configType=',config.configType);
 	console.log('test case',config.testVal);
 
+	module.exports.ssIds	= {};
 	module.exports.express	= require('express');
 	module.exports.Session	= module.exports.express.session.Session;
 	module.exports.connect	= require('connect');

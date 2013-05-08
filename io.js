@@ -58,8 +58,11 @@ exports.init = function()
 io.sockets.on('connection',function(socket){
 	var user = socket.handshake.session.user,
 		userID = socket.handshake.session.userID,
-		sessionReloadIntervalID;
+		sessionReloadIntervalID,
+		sendDirectMessage;
 
+	so.ssIds[user.emails[0].value] = socket.id;
+	console.log('add ',so.ssIds[user.emails[0].value],socket.id,user.emails[0].value);
 	users[userID] = user;
 
 	sessionReloadIntervalID = setInterval(function(){
@@ -120,6 +123,7 @@ io.sockets.on('connection',function(socket){
 		console.log('approveFriend',msg.info);
 		db.approveFriend(user,msg.info,function(success){
 			socket.emit('approvedFriend',{success:success});
+			sendDirectMessage({to:msg.info.email ,msg:'approved'});
 		});
 	});
 	socket.on('cancelFriend',function(msg){
@@ -150,8 +154,30 @@ io.sockets.on('connection',function(socket){
 			socket.emit('gotFriendList',{friends:friendList});	// 知人リストの通知
 		});
 	});
+	socket.on('directedMessage',function(msg){
+		console.log('directedMessage from ',msg.from,' msg ',msg.msg);
+	});
+	sendDirectMessage = function(msg){
+		console.log('dm ',msg.to,so.ssIds[msg.to]);
+		for(var iS in so.ssIds){
+			console.log(iS , ' ',so.ssIds[iS]);
+		}
+		var id = so.ssIds[msg.to];
+		if(id !== undefined){
+			console.log('directMessage to ',msg.to,' msg ',msg.msg);
+			// TODO: socket 自身もキャッシュの必要がある？？socketio directmessage で検索中
+			io.sockets.socket(id).emit('directedMessage',{from:user.emails[0].value,msg:msg.msg});
+		}
+		else{
+			console.log('directMessage to ',msg.to,' msg ',msg.msg,' is fail');
+		}
+	}
+	socket.on('directMessage',function(msg){
+		sendDirectMessage(msg);
+	});
 	socket.on('disconnect',function(){
 		clearInterval(sessionReloadIntervalID);
+		delete so.ssIds[user.emails[0].value];
 		delete users[userID];
 		socket.broadcast.emit('logout',userID);
 	});

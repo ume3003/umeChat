@@ -162,7 +162,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		return $listItem;
 	},
 	// TODO: ちゃんと削除できるようにつくる
-	deleteManageItem = function($listItem){
+	deleteManage = function($listItem){
 		var parent = $listItem[0].parentNode;
 		if(parent !== undefined){
 			parent.removeChild($listItem[0]);
@@ -187,7 +187,8 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 							ioc.approveFriend(manage,function(success){
 								if(success){
 									console.log('approval success',manage);
-									// TODO:リストから消す。フレンドリストに入れる
+									deleteManage($listItem);
+									// TODO:フレンドリストに入れる
 								}
 								uiparts.closeDlg();
 							});
