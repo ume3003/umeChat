@@ -116,9 +116,21 @@ io.sockets.on('connection',function(socket){
 			}
 		});
 	});
+	socket.on('approveFriend',function(msg){
+		console.log('approveFriend',msg.info);
+		db.approveFriend(user,msg.info,function(success){
+			socket.emit('approvedFriend',{success:success});
+		});
+	});
+	socket.on('cancelFriend',function(msg){
+		console.log('cancelFriend',msg.info);
+		db.cancelFriend(user,msg.info,function(success){
+			socket.emit('cancelledFriend',{success:success});
+		});
+	});
 	socket.on('getInviteList',function(msg){
 		console.log('getInviteList');
-		db.getInviteList(user,{$in:['0','1']},function(list){
+		db.getInviteList(user,{$in:['0','1','9']},function(list){
 			socket.emit('gotInviteList',{invite:list});
 		});
 	});

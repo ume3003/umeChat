@@ -35,13 +35,11 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	prepareAddFriendbox = function(){
 		$manageBtn.click(function(){
 			var addFriend = $manageInput.val();
-			console.log(addFriend);
 			if(addFriend.length > 0){
 				uiparts.showDlg(
 					{text :  addFriend + 'を検索します',
 						btns: [	{text : 'ok',callback : 
 							function(){ 
-								console.log(addFriend);
 								ioc.findFriend(addFriend,function(num,addedFriend){
 									if(num >= 0){
 										setManage(num,addedFriend);
@@ -164,20 +162,49 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		return $listItem;
 	},
 	setManage = function(i,manage){
-		var $listItem = createItem(3,'52px','listDock');
-		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + '' + ')');
-		$listItem.append('<div/>').find(':last').addClass('textM mnName').text(manage.email);
+		var $listItem = createItem(3,'52px','listDock'),
+			manageString = {'0':'申請中','1':'申請あり','9':'申請中'};
+		if(manage.stat ==='9'){
+			$listItem.append('<div/>').find(':last').addClass('textS mnEntry').text(manage.id);
+		}
+		$listItem.append('<div/>').find(':last').addClass('textS mnName').text(manage.email);
 
 		$listItem.$status = $listItem.append('<div/>').find(':last');
-		$listItem.$status.addClass('textM mnStatus').text(manage.stat === '0' ? '申請中' : '申請あり');
+		$listItem.$status.addClass('textS mnStatus').text(manageString[manage.stat]);
 		(function(arg){
 			$listItem.$status.click(function(){
 				console.log(manage.id,manage.email,manage.stat);
-				if(manage.stat === '0'){
-					// TODO:送信処理
+				if(manage.stat === '1'){// TODO:申請承認処理
+					uiparts.showDlg({text:manage.email + 'からのフレンド申請を承認します',
+						btns : [ { text:'ok',callback:function(){
+							ioc.approveFriend(manage,function(success){
+								if(success){
+									console.log('approval success',manage);
+									// TODO:リストから消す。フレンドリストに入れる
+								}
+								uiparts.closeDlg();
+							});
+						}},
+						{text:'cancel',callback:function(){
+							uiparts.closeDlg();
+						}}
+					]});
 				}
-				else{
-					console.log('status change');
+				else{	// 0か9
+					uiparts.showDlg({text:manage.email + 'へのフレンド申請を取り消します',
+						btns : [ { text:'ok',callback:function(){
+							ioc.cancelFriend(manage,function(success){
+								if(success){
+									console.log('cancel success',manage);
+									// TODO:リストから消す。
+								}
+								uiparts.closeDlg();
+							});
+						}},
+						{text:'cancel',callback:function(){
+							uiparts.closeDlg();
+						}}
+					]});
 				}
 			});
 		})(i);

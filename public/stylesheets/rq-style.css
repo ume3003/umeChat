@@ -280,12 +280,16 @@ a {
  *
  */
 .mnName {
-	top:8px;
-	left:54px;
+	top:2px;
+	left:2px;
+}
+.mnEntry {
+	top:20px;
+	left:2px;
 }
 .mnStatus {
-	top:8px;
-	left:200px;
+	top:2px;
+	left:220px;
 	width:70px;
 	height:20px;
 	border:1px solid #F00;

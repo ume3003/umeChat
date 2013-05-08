@@ -19,6 +19,7 @@ var
 			comment		: String,
 			photo		: String,
 			friends		: [FriendSchema],
+			privates	: {type:String,default:'f'},
 			created		: {type:Date,default:Date.now},
 			lastAccess	: {type:Date,default:Date.now}
 	}),
@@ -48,7 +49,7 @@ exports.init = function()
 // beInvite '0' '1' '2' 2はつかわずにFriendListを使うこと
 exports.getInviteList = function(user,beInvite,callback)
 {
-	User.find({_id:user.id,"friends.stat":beInvite},function(err,docs){
+	User.find({_id:user.id,"friends.stat":beInvite,privates:'f'},function(err,docs){
 		var i,invites= [],intive;
 		if(!err && docs && docs.length > 0 && docs[0].friends){
 			for(i = 0;i < docs[0].friends.length;i++){
@@ -76,7 +77,7 @@ exports.getFriendList = function(user,callback)
 }
 //	user_id		: String,
 //	email		: String,
-//	stat		: String	0,1
+//	stat		: String	0,1,9 9はユーザーにいない場合
 // 特定のユーザーにフレンドを追加する。デフォルトのステータスはinvite
 exports.addFriend = function(userId,friendEmail,callback)
 {
@@ -96,6 +97,7 @@ exports.addFriend = function(userId,friendEmail,callback)
 			else{
 				passkey = '0000' + Math.floor(Math.random() * 10000);
 				friend.user_id = passkey.slice(passkey.length - 4);
+				friend.stat = '9';
 			}
 			console.log(targetYou,isUser,passkey);
 			User.find({_id : userId,'friends.email':friendEmail},function(err,dumUser){	// 自分のDBへの保存
@@ -134,7 +136,59 @@ exports.addFriend = function(userId,friendEmail,callback)
 			callback('no such user',undefined,undefined);
 		}
 	});
-}
+};
+// 両方がすでに会員であり、申請がきたときに承認する処理
+// friend id email stat
+// db.users.update( {email:'ume3003@gmail.com','friends.email':'ume3@gmail.com'},{$set:{"friends.$.stat":'9'}})
+exports.approveFriend = function(user,friend,callback){
+	var myQuery		={_id:user.id,'friends.email':friend.email},
+		myUpdate	={$set:{'friends.$.stat':'2'}},
+		yourQuery	={email:friend.email,'friends.email':user.emails[0].value}
+		yourUpdate	={$set:{'friends.$.stat':'2'}};
+
+	console.log('approveFriend ',user.emails[0].value,friend.email,myQuery,myUpdate,yourQuery,yourUpdate);
+	User.update(myQuery,myUpdate,function(err){
+		if(!err){
+			User.update(yourQuery,yourUpdate,function(err2){
+				if(err){
+					console.log(err);
+				}
+				callback(!err);
+			});
+		}
+		else{
+			console.log(err);
+			callback(false);
+		}
+	});
+};
+// db.users.update({email:'ume3003@gmail.com'},{$pull:{'friends':{'email':'ume4@gmail.com'}}})
+exports.cancelFriend = function(user,friend,callback){
+	var myQuery		= {_id : user.id}		,myUpdate	= { $pull : {friends : {email:friend.email}}},
+		yourQuery	= {email:friend.email}	,yourUpdate	= { $pull : {friends : {email:user.emails[0].value }}};
+	
+	console.log('cancelFriend mine ',friend.email,myQuery,myUpdate);
+	User.update(myQuery,myUpdate,function(err){				// 自分のフレンドステータスの変更
+		if(err){
+			console.log(err);
+			callback(false);
+		}
+		else{
+			if(friend.stat !== '0'){
+				callback(true);
+			}
+			else{
+				console.log('cancelFriend friend ',yourQuery,yourUpdate);
+				User.update(yourQuery,yourUpdate,function(err2){
+					if(err2){
+						console.log(err);
+					}
+					callback(!err2);
+				});
+			}
+		}
+	});
+};
 //　特定のユーザーのフレンドのステータスを変更する
 exports.changeFriendStatus = function(userId,friendId,stat,callback)
 {
