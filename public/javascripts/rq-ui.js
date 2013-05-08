@@ -161,6 +161,13 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		}
 		return $listItem;
 	},
+	// TODO: ちゃんと削除できるようにつくる
+	deleteManageItem = function($listItem){
+		var parent = $listItem[0].parentNode;
+		if(parent !== undefined){
+			parent.removeChild($listItem[0]);
+		}
+	},
 	setManage = function(i,manage){
 		var $listItem = createItem(3,'52px','listDock'),
 			manageString = {'0':'申請中','1':'申請あり','9':'申請中'};
