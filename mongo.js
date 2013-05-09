@@ -79,7 +79,7 @@ exports.addFriend = function(user,friendEmail,callback)
 	}
 	User.find({email:friendEmail},function(err0,targetYou){	// そのフレンドがそもそもユーザーにいるか
 		var	friend	= {user_id:''	  ,email:friendEmail			,stat:'0'},			// 自分のテーブルに追加するフレンドの情報
-			me		= {user_id:user.id,email:user.emails[0].value,stat:'1'},		// フレンドのテーブルに追加する自分の情報
+			me		= {user_id:user.id,email:user.emails[0].value	,stat:'1'},		// フレンドのテーブルに追加する自分の情報
 			passkey = '0000' + Math.floor(Math.random() * 10000),
 			isUser	= false;
 		if(!err0 ){
@@ -185,6 +185,9 @@ exports.findUser = function(query,callback){
 		callback(uData);
 	});
 }
+/*
+ * saveでやらないとidがとれない。
+ */
 exports.addUser = function(uData,callback){
 	var newUser = new User();
 	newUser.user_id		= uData.identifier;
@@ -243,10 +246,7 @@ exports.addRoom = function(uData,callback){
 	room.member = uData.member;
 	room.chat = uData.chat;
 	room.save(function(err){
-		if(err){
-			console.log(err);
-		}
-		callback(err,room);
+		callback(!err ? room : undefined);
 	});
 }
 // ルームにメンバーを追加する
@@ -293,41 +293,29 @@ exports.getJoinRoomList = function(user,callback){
 	});
 }
 //  db.users.update({'_id':userId}, {$push:{"room_ids":"0"}} )
-exports.joinRoom = function(userId,roomId,callback){
-	exports.addRoomMember(roomId,userId,function(err){
+exports.joinRoom = function(user,roomId,callback){
+	exports.addRoomMember(roomId,user.id,function(err){
 		if(!err){
-			User.update({_id:userId},{$push:{room_ids:roomId}},function(err2){
-				callback(err2);
+			User.update({_id:user.id},{$push:{room_ids:roomId}},function(err2){
+				callback(!err2);
 			});
 		}
 		else{
-			callback(err);
+			callback(!err);
 		}
 	});
 }
 // roomInfoには作成者を予め埋め込むこと
 // test済み
-exports.createRoom = function(userId,roomInfo,callback){
-	exports.addRoom(roomInfo,function(err0,newRoom){			//　ルームIDをユーザーデータに追加
-		if(!err0){
-			User.update({_id:userId},{$push:{room_ids:newRoom.id}},function(err2){
-				if(!err2){
-					exports.findUser({_id:userId},function(uData){
-						if(uData !== undefined){
-							callback(err2,newRoom.id,uData.room_ids.length);
-						}
-						else{
-							callback('user data not found');
-						}
-					});
-				}
-				else{
-					callback(err2);
-				}
+exports.createRoom = function(user,roomInfo,callback){
+	exports.addRoom(roomInfo,function(newRoom){			//　ルームIDをユーザーデータに追加
+		if(newRoom !== undefined){
+			User.update({_id:user.id},{$push:{room_ids:newRoom.id}},function(err2){
+				callback(!err2 ? newRoom : undefined);
 			});
 		}
 		else{
-			callback(err0);
+			callback(undefined);
 		}
 	});
 }

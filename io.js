@@ -59,7 +59,7 @@ io.sockets.on('connection',function(socket){
 	var user = socket.handshake.session.user,
 		userID = socket.handshake.session.userID,
 		sessionReloadIntervalID,
-		sendDirectMessage;
+		notifyMessage;
 
 	console.log('init ',user.id);
 	/*
@@ -81,16 +81,15 @@ io.sockets.on('connection',function(socket){
 	/*
 	 * ヘルパ関数
 	 */
-	sendDirectMessage = function(msg){
-		var id = so.ssIds[msg.to];
+	notifyMessage = function(msgType,toUser,msg){
+		var id = so.ssIds[toUser];
 		if(id !== undefined){
-			console.log('directMessage to ',msg.to,' msg ',msg.msg);
-			io.sockets.socket(id).emit('directedMessage',{from:user.emails[0].value,msg:msg.msg});
+			io.sockets.socket(id).emit(msgType,msg);
 		}
-		else{		// TODO:ここはメッセージをDBに保存。ログインのときに送付
-			console.log('directMessage to ',msg.to,' msg ',msg.msg,' is fail');
+		else{
+			console.log('target doesnt login');
 		}
-	};
+	},
 	/*
 	 * ここから作り直し
 	 */
@@ -115,7 +114,7 @@ io.sockets.on('connection',function(socket){
 	socket.on('approveFriend',function(msg){
 		db.approveFriend(user,msg.info,function(success){
 			socket.emit('approvedFriend',{success:success});
-			sendDirectMessage({to:msg.info.email ,msg:'approved'});	// TODO:ログアウト時の処理
+			notifyMessage('directMessage',msg.info.email,{from:user.email[0].value,msg:'approved'});
 		});
 	});
 	socket.on('cancelFriend',function(msg){
@@ -133,27 +132,40 @@ io.sockets.on('connection',function(socket){
 			{uID:socket.handshake.session.userID,msg : msg.msg,roomId:msg.roomId});
 	});
 
-	socket.on('msg_joinRoom',function(roomId){
-
+	/*
+	 * msg.roomId msg.tgtUser
+	 *
+	 */
+	socket.on('invite_room',function(msg){
+		// TODO:tgtUserにdmをおくる。ログインしてない場合はDBに
+	});
+	/*
+	 * msg.roomId
+	 */
+	socket.on('join_room',function(msg){
+		db,joinRoom(user,msg.roomId,function(success){
+			if(success({
+				socket.join(roomId);
+			}
+			io.socket.in(roomId).emit('newoneJoined',{id:user.id});		// 入室したルームにブロードキャスト
+			socket.emit('joinedRoom',{success:success});				// 自分自身に入室成功を返す
+		});
 	});
 	socket.on('msg_createRoom',function(msg){
-		var roomInfo = {roomOwner : user.id,roomName : msg,member : [user.id]};
+		var roomInfo = {roomOwner : user.id,roomName : msg,member : [user.id]};,
 
-		db.createRoom(user.id,roomInfo,function(err,room_Id,joinCnt){
-			if(!err){
-				socket.join(room_Id);
-				socket.emit('roomCreated',{create:true,roomId:room_Id,roomName:msg,joinCount:joinCnt});
+		db.createRoom(user,roomInfo,function(room){
+			if(!room){
+				socket.join(room.Id);
 			}
-			else{
-				socket.emit('roomCreated',{create:false,roomId:'',roomName:'',joinCount:0});
-			}
+			socket.emit('roomCreated',{room:room);
 		});
 	});
 	/*
 	 * ダイレクトメッセージ系　とりあえず実装
 	 */
 	socket.on('directMessage',function(msg){
-		sendDirectMessage(msg);
+		notifyMessage('directMessage',msg.to,{from:user.emails[0].value,msg:msg.msg});
 	});
 
 	/*
