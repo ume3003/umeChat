@@ -28,10 +28,10 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	$manageBox		= $('#newFriendBox'),
 		$manageInput = $('#newFriend'),
 		$manageBtn = $('#newFriendAdd'),
-	$friendItems = {},				// フレンドリストページのフレンドアイテムオブジェクト
-	$roomItems = {},				// チャットルームリストページのルームアイテムオブジェクト
-	$chatItems = {},
-	$manageItems = {},
+	$friendItems = [],				// フレンドリストページのフレンドアイテムオブジェクト
+	$roomItems = [],				// チャットルームリストページのルームアイテムオブジェクト
+	$chatItems = [],
+	$manageItems = [],
 	prepareAddFriendbox = function(){
 		$manageBtn.click(function(){
 			var addFriend = $manageInput.val();
@@ -40,9 +40,10 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 					{text :  addFriend + 'を検索します',
 						btns: [	{text : 'ok',callback : 
 							function(){ 
-								ioc.findFriend(addFriend,function(num,addedFriend){
-									if(num >= 0){
-										setManage(num,addedFriend);
+								ioc.findFriend(addFriend,function(addedFriend){
+									var num = $manageItems.length;
+									if(addedFriend !== undefined){
+										$manageItems[num] = setManage($manageItems.length,addedFriend);
 									}
 									else{
 										console.log('not foound' , addFriend);
@@ -89,13 +90,12 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	},
 	setFriend = function(i,doc){
 		var $listItem = createItem(0,'52px','listDocBox');
-//		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + doc.pict + ')');
-		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + '/images/macallan.jpg'  + ')');
-		$listItem.append('<div/>').find(':last').addClass('textM flName').text(doc.email);
-		$listItem.append('<div/>').find(':last').addClass('textS flComm textEllipsis').text(doc.email);
+		console.log(doc);
+		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + doc.photo + ')');
+		$listItem.append('<div/>').find(':last').addClass('textM flName').text(doc.displayName);
+		$listItem.append('<div/>').find(':last').addClass('textS flComm textEllipsis').text(doc.comment);
 		(function(arg){
 			$listItem.click(function(){
-				// TODO:ここはメニュー
 				uiparts.showDlg(
 					{text : doc.name ,
 						btns: [	{text : 'ok',callback : 
@@ -110,7 +110,6 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 							}}
 						]
 					});
-					
 			});
 			$listItem.dblclick(function(){
 				showTab(2,function(){ // TODO:開いたチャットの内容の取得
@@ -162,17 +161,18 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		return $listItem;
 	},
 	// TODO: ちゃんと削除できるようにつくる
-	deleteManage = function($listItem){
+	deleteManage = function(num,$listItem){
 		var parent = $listItem[0].parentNode;
 		if(parent !== undefined){
 			parent.removeChild($listItem[0]);
+			$manageItems.slice(num,1);
 		}
 	},
 	setManage = function(i,manage){
 		var $listItem = createItem(3,'52px','listDock'),
 			manageString = {'0':'申請中','1':'申請あり','9':'申請中'};
 		if(manage.stat ==='9'){
-			$listItem.append('<div/>').find(':last').addClass('textS mnEntry').text(manage.id);
+			$listItem.append('<div/>').find(':last').addClass('textS mnEntry').text(manage.user_id);
 		}
 		$listItem.append('<div/>').find(':last').addClass('textS mnName').text(manage.email);
 
@@ -187,7 +187,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 							ioc.approveFriend(manage,function(success){
 								if(success){
 									console.log('approval success',manage);
-									deleteManage($listItem);
+									deleteManage(arg,$listItem);
 									// TODO:フレンドリストに入れる
 								}
 								uiparts.closeDlg();
@@ -204,7 +204,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 							ioc.cancelFriend(manage,function(success){
 								if(success){
 									console.log('cancel success',manage);
-									// TODO:リストから消す。
+									deleteManage(arg,$listItem);
 								}
 								uiparts.closeDlg();
 							});
@@ -230,14 +230,14 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				setChat(i,doc);
 				break;
 			case 3:
-				setManage(i,doc);
+				$manageItems[i] = setManage(i,doc);
 				break;
 			default:
 				break;
 		}
 	},
 	createList = function(arg,list,bShow){
-		if(list !== null && list.length > 0){
+		if(list !== undefined && list.length > 0){
 			for(i = 0; i < list.length;i++){
 				addList(arg,i,list[i]);
 			}

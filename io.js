@@ -61,27 +61,73 @@ io.sockets.on('connection',function(socket){
 		sessionReloadIntervalID,
 		sendDirectMessage;
 
+	console.log('init ',user.id);
+	/*
+	 *	connect の際の処理
+	 *	socket.idのメモリキャッシュ；最終的にはRedisにいれる
+	 *	userのキャッシュ　最終的にはRedisにいれる（でも必要？）
+	 *	cookie の定期更新
+	 *	TODO:logout中のダイレクトメッセージ
+	 *	TODO:チャットメッセージの送付
+	 */
 	so.ssIds[user.emails[0].value] = socket.id;
-	console.log('add ',so.ssIds[user.emails[0].value],socket.id,user.emails[0].value);
 	users[userID] = user;
-
 	sessionReloadIntervalID = setInterval(function(){
 		socket.handshake.session.reload(function(){
 			socket.handshake.session.touch().save();
 		});
 	},60 * 2 * 1000);
 
-	/*	会議室ごとに通知に変更する
-	socket.broadcast.emit('join',user);				//会議室全員に自分の入室を通知
-	socket.emit('member',{members : users});		//自分には会議室全員を通知
-	db.getJoinRoomList(user,function(RoomList){
-		socket.emit('roomList',{rooms:RoomList});		//会議リストの通知	
+	/*
+	 * ヘルパ関数
+	 */
+	sendDirectMessage = function(msg){
+		var id = so.ssIds[msg.to];
+		if(id !== undefined){
+			console.log('directMessage to ',msg.to,' msg ',msg.msg);
+			io.sockets.socket(id).emit('directedMessage',{from:user.emails[0].value,msg:msg.msg});
+		}
+		else{		// TODO:ここはメッセージをDBに保存。ログインのときに送付
+			console.log('directMessage to ',msg.to,' msg ',msg.msg,' is fail');
+		}
+	};
+	/*
+	 * ここから作り直し
+	 */
+	socket.on('getInviteList',function(msg){
+		db.getInviteList(user,{$in:['0','1','9']},function(list){
+			socket.emit('gotInviteList',{invite:list});
+		});
 	});
-	db.getFriendList(user,function(friendList){
-		socket.emit('friendList',{friends:friendList});	// 知人リストの通知
+	socket.on('getFriendList',function(){
+		db.getFriendList(user,function(friends){
+			socket.emit('gotFriendList',{friends:friends});	// 知人リストの通知
+		});
 	});
-	*/
 
+	socket.on('findFriend',function(msg){
+		console.log('findUser',user.id);
+		db.addFriend(user,msg.tgt,function(you){
+			socket.emit('foundFriend',{you:you,tgt:msg.tgt});
+		});
+	});
+
+	socket.on('approveFriend',function(msg){
+		db.approveFriend(user,msg.info,function(success){
+			socket.emit('approvedFriend',{success:success});
+			sendDirectMessage({to:msg.info.email ,msg:'approved'});	// TODO:ログアウト時の処理
+		});
+	});
+	socket.on('cancelFriend',function(msg){
+		db.cancelFriend(user,msg.info,function(success){
+			socket.emit('cancelledFriend',{success:success});
+		});
+	});
+
+
+	/*
+	 * あとで治す
+	 */
 	socket.on('msg_send',function(msg){	// TODO:ここでルームチェックとルームへのチャットデータの登録を行う
 		socket.to(msg.roomId).emit('msg_push',
 			{uID:socket.handshake.session.userID,msg : msg.msg,roomId:msg.roomId});
@@ -89,22 +135,6 @@ io.sockets.on('connection',function(socket){
 
 	socket.on('msg_joinRoom',function(roomId){
 
-	});
-	socket.on('inviteFriend',function(msg){
-		if(msg.friendEmail === user.emails[0].value){
-			socket.emit('friendInvited',{idx:-1});
-		}
-		else{
-			db.addFriend(user.id,msg.friendEmail,function(err,user,friend){
-				if(err){
-					socket.emit('friendInvited',{idx:-1});
-				}
-				else{	// 結果を返す
-					socket.emit('friendInvited',
-						{idx:user.friends.length - 1,id:friend.id,email:friend.email,stat:friend.stat});
-				}
-			});
-		}
 	});
 	socket.on('msg_createRoom',function(msg){
 		var roomInfo = {roomOwner : user.id,roomName : msg,member : [user.id]};
@@ -119,62 +149,16 @@ io.sockets.on('connection',function(socket){
 			}
 		});
 	});
-	socket.on('approveFriend',function(msg){
-		console.log('approveFriend',msg.info);
-		db.approveFriend(user,msg.info,function(success){
-			socket.emit('approvedFriend',{success:success});
-			sendDirectMessage({to:msg.info.email ,msg:'approved'});
-		});
-	});
-	socket.on('cancelFriend',function(msg){
-		console.log('cancelFriend',msg.info);
-		db.cancelFriend(user,msg.info,function(success){
-			socket.emit('cancelledFriend',{success:success});
-		});
-	});
-	socket.on('getInviteList',function(msg){
-		console.log('getInviteList');
-		db.getInviteList(user,{$in:['0','1','9']},function(list){
-			socket.emit('gotInviteList',{invite:list});
-		});
-	});
-	socket.on('findFriend',function(msg){
-		console.log(msg);
-		db.addFriend(user.id,msg.tgt,function(err,me,you){
-			if(err){
-				socket.emit('foundFriend',{cnt:-1,you:undefined,tgt:msg.tgt});
-			}
-			else{
-				socket.emit('foundFriend',{cnt:me.friends.length,you:you,tgt:msg.tgt});
-			}
-		});
-	});
-	socket.on('getFriendList',function(){
-		db.getFriendList(user,function(friendList){
-			socket.emit('gotFriendList',{friends:friendList});	// 知人リストの通知
-		});
-	});
-	socket.on('directedMessage',function(msg){
-		console.log('directedMessage from ',msg.from,' msg ',msg.msg);
-	});
-	sendDirectMessage = function(msg){
-		console.log('dm ',msg.to,so.ssIds[msg.to]);
-		for(var iS in so.ssIds){
-			console.log(iS , ' ',so.ssIds[iS]);
-		}
-		var id = so.ssIds[msg.to];
-		if(id !== undefined){
-			console.log('directMessage to ',msg.to,' msg ',msg.msg);
-			// TODO: socket 自身もキャッシュの必要がある？？socketio directmessage で検索中
-			io.sockets.socket(id).emit('directedMessage',{from:user.emails[0].value,msg:msg.msg});
-		}
-		else{
-			console.log('directMessage to ',msg.to,' msg ',msg.msg,' is fail');
-		}
-	}
+	/*
+	 * ダイレクトメッセージ系　とりあえず実装
+	 */
 	socket.on('directMessage',function(msg){
 		sendDirectMessage(msg);
 	});
+
+	/*
+	 * 切断。lastAcessの更新してください
+	 */
 	socket.on('disconnect',function(){
 		clearInterval(sessionReloadIntervalID);
 		delete so.ssIds[user.emails[0].value];

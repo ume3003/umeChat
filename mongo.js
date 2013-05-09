@@ -46,94 +46,79 @@ exports.init = function()
 	Chat = mongoose.model('Chat',ChatSchema);
 	Room = mongoose.model('Room',RoomSchema);
 };
+/*
+ * ここから作り直し
+ */
 // beInvite '0' '1' '2' 2はつかわずにFriendListを使うこと
 exports.getInviteList = function(user,beInvite,callback)
 {
-	User.find({_id:user.id,"friends.stat":beInvite,privates:'f'},function(err,docs){
-		var i,invites= [],intive;
-		if(!err && docs && docs.length > 0 && docs[0].friends){
-			for(i = 0;i < docs[0].friends.length;i++){
-				invite = docs[0].friends[i];
-				invites[i] = {id:invite.user_id,email:invite.email,stat:invite.stat};
-			}
-		}
-		callback(invites);
+	var query = {_id:user.id,"friends.stat":beInvite,privates:'f'};
+	User.find(query,function(err,docs){
+		callback((!err && docs && docs.length > 0 && docs[0].friends) ? docs[0].friends : undefined);
 	});
 };
 
 // 特定のユーザーのフレンドの一覧を返す
 exports.getFriendList = function(user,callback)
 {
-	User.find({_id:user.id,'friends.stat':'2'},function(err,docs){
-		var i,friends = [],friend;
-		if(!err && docs && docs.length > 0 && docs[0].friends){
-			for(i = 0; i < docs[0].friends.length;i++){
-				friend = docs[0].friends[i];
-				friends[i] = {id:friend.user_id,email:friend.email,stat:friend.stat};
-			}
-		}
-		callback(friends);
+	var query	= {'friends.user_id':user.id,'friends.stat':'2'},
+		columns = {user_id:1,displayName:2,email:3,comment:4,photo:5,lastAccess:6};
+	User.find(query,columns,function(err,friends){
+		callback(!err ? friends : undefined);
 	});
 }
 //	user_id		: String,
 //	email		: String,
 //	stat		: String	0,1,9 9はユーザーにいない場合
 // 特定のユーザーにフレンドを追加する。デフォルトのステータスはinvite
-exports.addFriend = function(userId,friendEmail,callback)
+exports.addFriend = function(user,friendEmail,callback)
 {
+	if(friendEmail === user.emails[0].value){
+		console.log('same user');
+		callback(undefined);
+	}
 	User.find({email:friendEmail},function(err0,targetYou){	// そのフレンドがそもそもユーザーにいるか
-		var	friend = new Friend(),			// 自分のテーブルに追加するフレンドの情報
-			inviteUser = new Friend(),		// フレンドのテーブルに追加する自分の情報
-			me ,
-			passkey = '0000',
-			isUser = false;
+		var	friend	= {user_id:''	  ,email:friendEmail			,stat:'0'},			// 自分のテーブルに追加するフレンドの情報
+			me		= {user_id:user.id,email:user.emails[0].value,stat:'1'},		// フレンドのテーブルに追加する自分の情報
+			passkey = '0000' + Math.floor(Math.random() * 10000),
+			isUser	= false;
 		if(!err0 ){
-			friend.stat = '0';
-			friend.email = friendEmail;
 			if(targetYou && targetYou.length > 0){
 				friend.user_id = targetYou[0].id;
 				isUser = true;
 			}
 			else{
-				passkey = '0000' + Math.floor(Math.random() * 10000);
 				friend.user_id = passkey.slice(passkey.length - 4);
 				friend.stat = '9';
 			}
-			console.log(targetYou,isUser,passkey);
-			User.find({_id : userId,'friends.email':friendEmail},function(err,dumUser){	// 自分のDBへの保存
+			User.find({_id : user.id,'friends.email':friendEmail},function(err,dumUser){	// 自分のDBへの保存
 				if(!err){
 					if(dumUser && dumUser.length > 0){		//  該当ユーザーフレンドにいます
 						console.log('same friends change status');
-						callback('already have such user',undefined,undefined);
+						callback(undefined);
 					}
 					else{		// フレンドにいないので追加です
-						User.find({_id : userId},function(err,existusers){	// 自分のDBへの保存
-							existusers[0].friends.push(friend);
-							existusers[0].save(function(err){
-								if(!err){
-									me = existusers[0];
-									console.log('me',me);
-									if(isUser){		// 相手のDBへ保存
-										inviteUser.stat = '1';	
-										inviteUser.email = me.email;
-										inviteUser.user_id = me.id;
-										targetYou[0].friends.push(inviteUser);
-										targetYou[0].save(function(err2){
-											callback(null,me,friend);
-										});
-									}
-									else{
-										callback(null,me,friend);
-									}
+						User.update({_id:user.id},{$push:{'friends':friend}},function(err){
+							if(!err){
+								if(isUser){		// 相手のDBへ保存
+									User.update({email:friendEmail},{$push:{'friends':me}},function(err2){
+										callback(friend);
+									});
 								}
-							});
+								else{
+									callback(friend);
+								}
+							}
+							else{
+								callback(undefined);
+							}
 						});
 					}
 				}
 			});
 		}
 		else{
-			callback('no such user',undefined,undefined);
+			callback(undefined);
 		}
 	});
 };
@@ -167,7 +152,6 @@ exports.cancelFriend = function(user,friend,callback){
 	var myQuery		= {_id : user.id}		,myUpdate	= { $pull : {friends : {email:friend.email}}},
 		yourQuery	= {email:friend.email}	,yourUpdate	= { $pull : {friends : {email:user.emails[0].value }}};
 	
-	console.log('cancelFriend mine ',friend.email,myQuery,myUpdate);
 	User.update(myQuery,myUpdate,function(err){				// 自分のフレンドステータスの変更
 		if(err){
 			console.log(err);
@@ -178,7 +162,6 @@ exports.cancelFriend = function(user,friend,callback){
 				callback(true);
 			}
 			else{
-				console.log('cancelFriend friend ',yourQuery,yourUpdate);
 				User.update(yourQuery,yourUpdate,function(err2){
 					if(err2){
 						console.log(err);
@@ -189,30 +172,44 @@ exports.cancelFriend = function(user,friend,callback){
 		}
 	});
 };
-//　特定のユーザーのフレンドのステータスを変更する
-exports.changeFriendStatus = function(userId,friendId,stat,callback)
-{
-	// フレンドの存在チェックはいらない。ユーザーのフレンドにいないデータは変更しないので。
-	User.find({_id:userId},function(err,docs){
-		var i,
-			newData = {user_id:friendId,stat:stat};
-
-		if(!err && docs && docs.length > 0){
-			if(docs[0].friends != undefined){
-				for(i=0;i < docs[0].friends.length;i++){
-					if(docs[0].friends[i].user_id === friendId){
-						newData.email = docs[0].friends[i].email;
-						docs[0].friends.set(i,newData);
-						docs[0].save();
-						callback(null,docs[0],newData);
-						return;
-					}
-				}
-			}
+// 引数のqueryは検索条件にそのままわたすのでフィールド：値で。
+// テスト済み
+exports.findUser = function(query,callback){
+	User.find(query,function(err,docs){
+		var uData	= undefined;
+		if(docs.length > 0){
+			uData	= docs[0];
+			uData.photo = '/images/macallan.jpg';
+			uData.comment = 'サンプルコメント。長い文字列だとどうなるんだろうか。ちょっと書いてみる。このくらいでいいか。';
 		}
-		callback('fail',undefined,undefined);
+		callback(uData);
 	});
 }
+exports.addUser = function(uData,callback){
+	var newUser = new User();
+	newUser.user_id		= uData.identifier;
+	newUser.displayName = uData.displayName;
+	newUser.email		= uData.emails[0].value;
+	newUser.comment		= '';
+	newUser.photo		= '/images/sample.png';
+	exports.findUser({"email" : newUser.email},function(dum){
+		if(dum === undefined){
+			console.log(newUser);
+			newUser.save(function(err){
+				if(err){
+					console.log(err);
+				}
+				callback(err,newUser);
+			});
+		}
+		else{
+			callback(null,newUser);
+		}
+	});
+}
+/*
+ *	作り直しここまで1
+ */
 exports.findAllRoom = function(callback)
 {
 	var rooms = {};
@@ -254,32 +251,18 @@ exports.addRoom = function(uData,callback){
 }
 // ルームにメンバーを追加する
 // not tested
+//  db.users.update({'email':'shozo.ueno@smikiegames.com'}, {$push:{"room_ids":"0"}} )
 exports.addRoomMember = function(roomId,userId,callback){
-	Room.find({room_id : roomId},function(err,rooms){
-		if(!err && !rooms && rooms.length > 0){
-			rooms[0].member.push(userId);
-			rooms[0].save(function(err){
-				if(!err){
-					console.log(err);
-				}
-				callback(err);
-			});
-		}
-		else{
-			console.log(err);
-		}
+	Room.update({room_id:roomId},{$push:{member:userId}},{upsert:false},function(err){
+		callback(err);
 	});
 }
 // ルームのメンバーを削除する
 // not tested
 exports.removeRoomMember = function(roomId,userId,callback){
-	Room.update({room_id : roomId},
-		{ $pull : {member:userId}},
-		{ upsert : false,multi:false},
-			function(err){
-				callback(err);
-			}
-		);
+	Room.update({room_id:roomId},{$pull:{member:userId}},{upsert:false,multi:false},function(err){
+		callback(err);
+	});
 }
 // not tested
 exports.findAllUser = function(callback){
@@ -289,40 +272,6 @@ exports.findAllUser = function(callback){
 			users[i] = data[i].doc;
 		}
 		callback(users);
-	});
-}
-// 引数のqueryは検索条件にそのままわたすのでフィールド：値で。
-// テスト済み
-exports.findUser = function(query,callback){
-	User.find(query,function(err,docs){
-		var 
-			uData	= undefined,
-			size	= docs.length;
-		if(size > 0){
-			uData	= docs[0];
-			uData.photo = '/images/macallan.jpg';
-			uData.comment = 'サンプルコメント。長い文字列だとどうなるんだろうか。ちょっと書いてみる。このくらいでいいか。';
-		}
-		callback(uData);
-	});
-}
-exports.addUser = function(uData,callback){
-	var user = new User();
-	user.user_id = uData.identifier;
-	user.displayName = uData.displayName;
-	user.email = uData.emails[0].value;
-	exports.findUser({"email" : user.email},function(uData){
-		if(uData === undefined){
-			user.save(function(err){
-				if(err){
-					console.log(err);
-				}
-				callback(err,user);
-			});
-		}
-		else{
-			callback(null,uData);
-		}
 	});
 }
 // not tested
@@ -338,34 +287,21 @@ exports.removeUser = function(userId,callback){
  * userデータから入室しているルーム情報をとる。Idとname
  */
 exports.getJoinRoomList = function(user,callback){
-	exports.findUser({"email":user.emails[0].value},function(userData){
-		var roomList = [];
-		Room.find({"_id":{$in:userData.room_ids}},function(err,docs){
-			for(var i = 0;i < docs.length;i++){
-				roomList[i] = {id:docs[i].id,name:docs[i].roomName};
-			}
-			callback(roomList);
-		});
-	}
-	);
+	var roomList = [];
+	Room.find({member:user.id},function(rooms){
+		callback(rooms);
+	});
 }
+//  db.users.update({'_id':userId}, {$push:{"room_ids":"0"}} )
 exports.joinRoom = function(userId,roomId,callback){
 	exports.addRoomMember(roomId,userId,function(err){
 		if(!err){
-			User.find({_id : userId},function(err,users){
-				if(!err && !users && users.length > 0){
-					users[0].room_ids.push(roomId);
-					users[0].save(function(err){
-						if(!err){
-							console.log(err);
-						}
-						callback(err);
-					});
-				}
-				else{
-					console.log(err);
-				}
+			User.update({_id:userId},{$push:{room_ids:roomId}},function(err2){
+				callback(err2);
 			});
+		}
+		else{
+			callback(err);
 		}
 	});
 }
@@ -374,17 +310,24 @@ exports.joinRoom = function(userId,roomId,callback){
 exports.createRoom = function(userId,roomInfo,callback){
 	exports.addRoom(roomInfo,function(err0,newRoom){			//　ルームIDをユーザーデータに追加
 		if(!err0){
-			User.find({_id : userId},function(err,users){
-				if(!err && users && users.length > 0){
-					users[0].room_ids.push(newRoom.id);
-					users[0].save(function(err1){
-						callback(err1,newRoom.id,users[0].room_ids.length);
+			User.update({_id:userId},{$push:{room_ids:newRoom.id}},function(err2){
+				if(!err2){
+					exports.findUser({_id:userId},function(uData){
+						if(uData !== undefined){
+							callback(err2,newRoom.id,uData.room_ids.length);
+						}
+						else{
+							callback('user data not found');
+						}
 					});
 				}
 				else{
-					console.log(err);
+					callback(err2);
 				}
 			});
+		}
+		else{
+			callback(err0);
 		}
 	});
 }

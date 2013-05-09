@@ -40,15 +40,9 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			}
 		});
 		// 検索したユーザーがいたかの返答
-		// TODO:いない場合のmsg埋め込みもサーバ側でしちゃっときたい。
 		socket.on('foundFriend',function(msg){
 			if(findFriendCallback[msg.tgt] !== undefined){
-				if(msg.cnt >= 0){
-					findFriendCallback[msg.tgt](msg.cnt,{id:msg.you.user_id,email:msg.you.email,stat:msg.you.stat	,pict:'/images/macallan.jpg'});
-				}
-				else{
-					findFriendCallback[msg.tgt](-1,	{id:undefined,email:msg.tgt,stat:'0'	,pict:'/images/macallan.jpg'});
-				}
+				findFriendCallback[msg.tgt](msg.you);
 				findFriendCallback[msg.tgt] = undefined;
 			}
 		});
@@ -64,6 +58,9 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 				cbks.cancelFriend(msg.success);
 				cbks.cancelFriend = undefined;
 			}
+		});
+		socket.on('directedMessage',function(msg){
+			console.log(msg);
 		});
 	},
 	logout = function(){
