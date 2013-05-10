@@ -15,19 +15,19 @@ var
 			user_id		: String,
 			displayName	: String,
 			email		: String,
-			room_ids	: [String],
-			comment		: String,
 			photo		: String,
+			roomInfos	: [ChatSchema],			// id:{ roomid } flag : { 0:invited ,1:join } 
+			comments	: [ChatSchema],			// id:{ not use } flag : {0:previous 1:current } body :{comment}
 			friends		: [FriendSchema],
 			privates	: {type:String,default:'f'},
 			created		: {type:Date,default:Date.now},
 			lastAccess	: {type:Date,default:Date.now}
 	}),
 	ChatSchema	= new Schema({
-			author		: String,
-			ChatType	: String,
+			id			: String,
+			flag		: String,
 			body		: String,
-			date		: {type:Date,default:Date.now}
+			lastAccess	: {type:Date,default:Date.now}
 	}),
 	RoomSchema	= new Schema({
 			roomOwner	: String,
@@ -36,7 +36,14 @@ var
 			chat		: [ChatSchema],
 			created		: {type:Date,default:Date.now},
 			lastAccess	: {type:Date,default:Date.now}
-	});
+	}),
+	roomFieldS	= {
+		roomOwner :1,
+		roomName :2,
+		member :3,
+		created:4,
+		lastAccess:5
+	};
 
 exports.init = function()
 {
@@ -61,7 +68,7 @@ exports.getInviteList = function(user,beInvite,callback)
 // 特定のユーザーのフレンドの一覧を返す
 exports.getFriendList = function(user,callback)
 {
-	var query	= {'friends.user_id':user.id,'friends.stat':'2'},
+	var query	= {'friends.user_id':user.id,'friends.stat':'2','comments:flag':'1'},
 		columns = {user_id:1,displayName:2,email:3,comment:4,photo:5,lastAccess:6};
 	User.find(query,columns,function(err,friends){
 		callback(!err ? friends : undefined);
@@ -126,15 +133,14 @@ exports.addFriend = function(user,friendEmail,callback)
 // friend id email stat
 // db.users.update( {email:'ume3003@gmail.com','friends.email':'ume3@gmail.com'},{$set:{"friends.$.stat":'9'}})
 exports.approveFriend = function(user,friend,callback){
-	var myQuery		={_id:user.id,'friends.email':friend.email},
-		myUpdate	={$set:{'friends.$.stat':'2'}},
-		yourQuery	={email:friend.email,'friends.email':user.emails[0].value}
-		yourUpdate	={$set:{'friends.$.stat':'2'}};
+	var myQuery		= {_id:user.id,'friends.email':friend.email},
+		yourQuery	= {email:friend.email,'friends.email':user.emails[0].value}
+		Update		= {$set:{'friends.$.stat':'2'}};
 
-	console.log('approveFriend ',user.emails[0].value,friend.email,myQuery,myUpdate,yourQuery,yourUpdate);
-	User.update(myQuery,myUpdate,function(err){
+	console.log('approveFriend ',user.emails[0].value,friend.email,myQuery,yourQuery,Update);
+	User.update(myQuery,Update,function(err){
 		if(!err){
-			User.update(yourQuery,yourUpdate,function(err2){
+			User.update(yourQuery,Update,function(err2){
 				if(err){
 					console.log(err);
 				}
@@ -175,12 +181,19 @@ exports.cancelFriend = function(user,friend,callback){
 // 引数のqueryは検索条件にそのままわたすのでフィールド：値で。
 // テスト済み
 exports.findUser = function(query,callback){
+	query["comments.flag"] = "1";
 	User.find(query,function(err,docs){
 		var uData	= undefined;
 		if(docs.length > 0){
 			uData	= docs[0];
 			uData.photo = '/images/macallan.jpg';
-			uData.comment = 'サンプルコメント。長い文字列だとどうなるんだろうか。ちょっと書いてみる。このくらいでいいか。';
+			if(docs[0].comments && docs[0].comments.length > 0){
+				uData.comment = docs[0].comments[0].body;
+			}
+			else{
+				uData.comment = 'sample comment';
+			//	uData.comment = 'サンプルコメント。長い文字列だとどうなるんだろうか。ちょっと書いてみる。このくらいでいいか。';
+			}
 		}
 		callback(uData);
 	});
@@ -193,8 +206,7 @@ exports.addUser = function(uData,callback){
 	newUser.user_id		= uData.identifier;
 	newUser.displayName = uData.displayName;
 	newUser.email		= uData.emails[0].value;
-	newUser.comment		= '';
-	newUser.photo		= '/images/sample.png';
+	newUser.comments	= {flag:'1',body:'nothing',lastAccess:new Date()};
 	exports.findUser({"email" : newUser.email},function(dum){
 		if(dum === undefined){
 			console.log(newUser);
@@ -206,77 +218,28 @@ exports.addUser = function(uData,callback){
 			});
 		}
 		else{
-			callback(null,newUser);
+	callback(null,newUser);
 		}
 	});
 }
 /*
- *	作り直しここまで1
+ *	status は　{field:updateStatus}の形で。
  */
-exports.findAllRoom = function(callback)
-{
-	var rooms = {};
-	Room.find({},function(err,data){
-		for(var i = 0,size = data.length;i < size;++i){
-			rooms[i] = data[i].doc;
-		}
-		callback(rooms);
+exports.modifyStatus = function(user,status,callback){
+	User.update({_id:user.id},status,function(err){
+		callback(!err);
 	});
 }
-exports.findRoom = function(roomId,callback){
-	Room.find({room_id : roomId},function(err,docs){
-		var rData = undefined,
-			size = docs.length;
-		if(size > 0){
-			rData = docs[0];
-		}
-		callback(rData);
-	});
-}
-
-//	roomOwher	: String,
-//	roomName	: String,
-//	member		: [String],
-//	chat		: [ChatSchema]
-
-exports.addRoom = function(uData,callback){
-	var room = new Room();
-	room.roomOwner = uData.roomOwner;
-	room.roomName = uData.roomName;
-	room.member = uData.member;
-	room.chat = uData.chat;
-	room.save(function(err){
-		callback(!err ? room : undefined);
-	});
-}
-// ルームにメンバーを追加する
-// not tested
-//  db.users.update({'email':'shozo.ueno@smikiegames.com'}, {$push:{"room_ids":"0"}} )
-exports.addRoomMember = function(roomId,userId,callback){
-	Room.update({room_id:roomId},{$push:{member:userId}},{upsert:false},function(err){
-		callback(err);
-	});
-}
-// ルームのメンバーを削除する
-// not tested
-exports.removeRoomMember = function(roomId,userId,callback){
-	Room.update({room_id:roomId},{$pull:{member:userId}},{upsert:false,multi:false},function(err){
-		callback(err);
+exports.addComment = function(user,comment,callback){
+	User.update({_id:user.id,'comments.flag':'1'},{$set:{'comments.$.lag':'0'}},function(err){
+		User.update({_id:user.id},{$push:{comments:{flag:'1',body:comment,lastAccess:new Date()}}},function(err){
+			callback(!err);
+		});
 	});
 }
 // not tested
-exports.findAllUser = function(callback){
-	var users = {};
-	User.find({},function(err,data){
-		for (var i = 0,size = data.length;i < size;++i){
-			users[i] = data[i].doc;
-		}
-		callback(users);
-	});
-}
-// not tested
-exports.removeUser = function(userId,callback){
-	User.remove({user_id : userId},function(err){
+exports.removeUser = function(user,callback){
+	User.remove({user_id : user.id},function(err){
 		if(err){
 			console.log(err);
 		}
@@ -287,22 +250,8 @@ exports.removeUser = function(userId,callback){
  * userデータから入室しているルーム情報をとる。Idとname
  */
 exports.getJoinRoomList = function(user,callback){
-	var roomList = [];
 	Room.find({member:user.id},function(rooms){
 		callback(rooms);
-	});
-}
-//  db.users.update({'_id':userId}, {$push:{"room_ids":"0"}} )
-exports.joinRoom = function(user,roomId,callback){
-	exports.addRoomMember(roomId,user.id,function(err){
-		if(!err){
-			User.update({_id:user.id},{$push:{room_ids:roomId}},function(err2){
-				callback(!err2);
-			});
-		}
-		else{
-			callback(!err);
-		}
 	});
 }
 // roomInfoには作成者を予め埋め込むこと
@@ -310,7 +259,7 @@ exports.joinRoom = function(user,roomId,callback){
 exports.createRoom = function(user,roomInfo,callback){
 	exports.addRoom(roomInfo,function(newRoom){			//　ルームIDをユーザーデータに追加
 		if(newRoom !== undefined){
-			User.update({_id:user.id},{$push:{room_ids:newRoom.id}},function(err2){
+			User.update({_id:user.id},{$push:{roomInfos:{id:newRoom.id,flag:'1',lastAccess:new Date()}}},function(err2){
 				callback(!err2 ? newRoom : undefined);
 			});
 		}
@@ -319,4 +268,94 @@ exports.createRoom = function(user,roomInfo,callback){
 		}
 	});
 }
+// tgtのユーザーをroomへinviteする
+exports.inviteRoom = function(tgtId,roomId,callback){
+	exports.findRoom(roomId,function(invitedRoom){
+		if(invitedRoom !== undefined){
+			User.update({_id:tgtId},{$push:{roomInfos:{id:invitedRoom.id,flag:'0',lastAccess:new Date()}}},{upsert:false}),function(err){
+				callback(!err);
+			}
+		}
+		else{
+			callback(false);
+		}
+	});
+}
+//  db.users.update({'_id':userId}, {$push:{"room_ids":"0"}} )
+//  inviteされたroomへjoinする
+exports.joinRoom = function(user,roomId,callback){
+	exports.addRoomMember(roomId,user.id,function(err){
+		if(!err){
+			User.update({_id:user.id,'roomInfos.id':roomId},{$set:{'roomInfos.$.flag':'1'}},function(err2){
+				callback(!err2);
+			});
+		}
+		else{
+			callback(!err);
+		}
+	});
+}
+exports.findRoomShort = function(roomId,callback){
+	Room.find({_id : roomId},roomFieldS,function(err,docs){
+		callback(docs.length > 0 ? docs[0] : undefined);
+	});
+}
+exports.findRoom = function(roomId,callback){
+	Room.find({_id : roomId},function(err,docs){
+		callback(docs.length > 0 ? docs[0] : undefined);
+	});
+}
+
+//	roomOwher	: String,
+//	roomName	: String,
+//	member		: [String],
+//	chat		: [ChatSchema]
+
+exports.addRoom = function(roomInfo,callback){
+	var room = new Room();
+	room.roomOwner = roomInfo.roomOwner;
+	room.roomName = roomInfo.roomName;
+	room.member = roomInfo.member;
+	room.chat = roomInfo.chat;
+	room.save(function(err){
+		callback(!err ? room : undefined);
+	});
+}
+exports.addRoomMember = function(roomId,userId,callback){
+	Room.update({_id:roomId},{$push:{member:userId}},{upsert:false,multi:false},function(err){
+		callback(!err);
+	});
+}
+// ルームのメンバーを削除する
+// not tested
+exports.removeRoomMember = function(roomId,userId,callback){
+	Room.update({_id:roomId},{$pull:{member:userId}},{upsert:false,multi:false},function(err){
+		callback(!err);
+	});
+}
+
+/*
+ * チャットを発言する
+ */
+exports.sayChat = function(user,roomId,message,flag,callback){
+	Room.update({_id:roomId},{$push:{chat:{id:user.id,flag:flag,body:message,lastAccess:new Date()}}},function(err){
+		callback(!err);
+	});
+}
+/*
+ * 指定日時より前のチャットを指定件数だけ取得する
+ * db.users.aggregate([{$unwind:"$comments"},{$sort:{"comments.lastAccess":-1}},{$project:{"comments":1}}])
+ * unwind:embedded docの展開
+ * soft:展開したdocのソート
+ * project:出力フィールドの指定
+ * 戻りは配列。
+ * 日付以前　＞　$lt 
+ * 件数制限　検索のこと
+ */
+exports.getLog = function(user,roomId,lastAccess,count){
+	Room.aggregate({'$match':{'_id':roomId,'lastAccess':{'$lt':lastAccess}}},{'$unwind':'$comments'},{'$sort':'-1'},{'$project':{'comments':1}},function(err,comments){
+		callback(err ? undefined : comments);
+	});
+}
+
 

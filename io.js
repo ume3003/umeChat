@@ -144,7 +144,7 @@ io.sockets.on('connection',function(socket){
 	 */
 	socket.on('join_room',function(msg){
 		db,joinRoom(user,msg.roomId,function(success){
-			if(success({
+			if(success){
 				socket.join(roomId);
 			}
 			io.socket.in(roomId).emit('newoneJoined',{id:user.id});		// 入室したルームにブロードキャスト
@@ -152,13 +152,13 @@ io.sockets.on('connection',function(socket){
 		});
 	});
 	socket.on('msg_createRoom',function(msg){
-		var roomInfo = {roomOwner : user.id,roomName : msg,member : [user.id]};,
+		var roomInfo = {roomOwner : user.id,roomName : msg,member : [user.id]};
 
 		db.createRoom(user,roomInfo,function(room){
 			if(!room){
 				socket.join(room.Id);
 			}
-			socket.emit('roomCreated',{room:room);
+			socket.emit('roomCreated',{room:room});
 		});
 	});
 	/*
