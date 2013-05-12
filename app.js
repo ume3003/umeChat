@@ -13,7 +13,16 @@ so.init();
 //db.init();
 
 db.init(so.mongoURL);
-
+/*
+db.Room.addRoom({roomOwner:'000',roomName:'aaa',member:['000']},function(room){
+	db.Room.sayChat('000',room.id,'messagegege','0',function(chatInfo){
+		console.log(chatInfo);
+		db.Notify.notifyMessage('000','111',4,chatInfo.id,function(notify){
+			console.log(notify);
+		});
+	});
+});
+*/
 // all environments
 so.app.set('secretKey',so.ssKey);         // appにセットしておく
 so.app.set('cookieSessionKey',so.csKey);

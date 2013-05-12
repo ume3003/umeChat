@@ -1,12 +1,12 @@
 var _collection,
 	_schema,
-	chat = require('./chat');
+	_chat;
 
 exports.collection = function(){
 	return _collection;
 }
 
-exports.init = function(db){
+exports.init = function(db,chat){
 	_schema	= new db.Schema({
 			roomOwner	: String,
 			roomName	: String,
@@ -15,6 +15,7 @@ exports.init = function(db){
 			created		: {type:Date,default:Date.now},
 			lastAccess	: {type:Date,default:Date.now}
 	});
+	_chat = chat;
 	_collection = db.model('Room',_schema);
 }
 
@@ -69,10 +70,18 @@ exports.removeRoomMember = function(roomId,userId,callback){
 
 /*
  * チャットを発言する
+ * ここだけかなり特別。チャットのIDをNotifyで使う
  */
-exports.sayChat = function(user,roomId,message,flag,callback){
-	_collection.update({_id:roomId},{$push:{chat:{id:user.id,flag:flag,body:message,lastAccess:new Date()}}},function(err){
-		callback(!err);
+exports.sayChat = function(userId,roomId,message,flag,callback){
+	var Chat = _chat.collection(),		// Collectionから作成したオブジェクトでアップデートするとIDが取れる
+		newChat = new Chat();
+	newChat.sayid = userId;
+	newChat.flag = flag;
+	newChat.body = message;
+	newChat.lastAccess = new Date();
+	_collection.update({_id:roomId},{$push:{chat:newChat}},function(err){
+		console.log(newChat.id);		// _idが撮れてる
+		callback(!err ? newChat : undefined);
 	});
 }
 

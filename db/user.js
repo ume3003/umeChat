@@ -83,8 +83,9 @@ exports.addFriend = function(user,friendEmail,callback)
 					else{		// フレンドにいないので追加です
 						_collection.update({_id:user.id},{$push:{'friends':friend}},function(err){
 							if(!err){
-								if(isUser){		// 相手のDBへ保存
-									_collection.update({email:friendEmail},{$push:{'friends':me}},function(err2){
+								if(isUser){		// 相手のDBへ保存、検索条件に相手のDBのフレンド情報に自分がいない、を追加
+									_collection.update({email:friendEmail,'friends.email':{$ne:me.email}},{$push:{'friends':me}},function(err2){
+										console.log(me,friend);
 										callback(friend);
 									});
 								}
@@ -213,6 +214,10 @@ exports.modifyStatus = function(user,status,callback){
 	_collection.update({_id:user.id},status,function(err){
 		callback(!err);
 	});
+}
+exports.logout = function(user,callback){
+	var la = {lastAccess:new Date()};
+	exports.modifyStatus(user,la,callback);
 }
 exports.addComment = function(user,comment,callback){
 	_collection.update({_id:user.id,'comments.flag':'1'},{$set:{'comments.$.lag':'0'}},function(err){

@@ -168,6 +168,7 @@ io.sockets.on('connection',function(socket){
 	});
 	/*
 	 * msg.roomId
+	 * 永続的にチャットルームにはいる
 	 */
 	socket.on('join_room',function(msg){
 		db,joinRoom(user,msg.roomId,function(success){
@@ -177,6 +178,27 @@ io.sockets.on('connection',function(socket){
 			io.socket.in(roomId).emit('newoneJoined',{id:user.id});		// 入室したルームにブロードキャスト
 			socket.emit('joinedRoom',{success:success});				// 自分自身に入室成功を返す
 		});
+	});
+	/*
+	 * チャットルームを開く。フラグがたち、以後メッセージが配信される
+	 */
+	socket.on('enterRoom',function(msg){
+		db.Room.findRoomShort(msg.roomId,function(room){
+			if(room !== undefined){
+				socket.join(room.id);
+				// TODO:通知終了
+			}
+			socketemit('enteredRoom',{success:room !== undefined});
+		});
+	});
+	socket.on('leaveRoom',function(msg){
+		db.Room.findRoomShort(msg.roomId,function(room){
+			if(room){
+				// TODO:通知へ
+				socket.leave(room.id);
+			}
+			socket.emit('leftRoom',{success:room !== undefined});
+		}
 	});
 	socket.on('msg_createRoom',function(msg){
 		var roomInfo = {roomOwner : user.id,roomName : msg,member : [user.id]};
@@ -196,10 +218,14 @@ io.sockets.on('connection',function(socket){
 	});
 
 	/*
-	 * 切断。lastAcessの更新してください
+	 * 切断。
 	 */
 	socket.on('disconnect',function(){
 		clearInterval(sessionReloadIntervalID);
+		db.User.logout(user,function(success){
+			// TODO:通知処理変更
+			console.log(success);
+		});
 		delete so.ssIds[user.emails[0].value];
 		delete users[userID];
 		socket.broadcast.emit('logout',userID);

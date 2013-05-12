@@ -9,7 +9,7 @@ exports.schema = function(){
 exports.init = function(db){
 
 	_schema	= new db.Schema({
-			id			: String,
+			sayid		: String,
 			flag		: Number,
 			body		: String,
 			lastAccess	: {type:Date,default:Date.now}

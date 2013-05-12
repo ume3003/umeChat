@@ -1,6 +1,6 @@
-var collection;
-exports.getCollection = function(){
-	return collection;
+var _collection;
+exports.collection = function(){
+	return _collection;
 }
 exports.init = function(db){
 	NotifySchema = new db.Schema({
@@ -8,11 +8,21 @@ exports.init = function(db){
 		to_id			: String,
 		type			: {type:Number,default:0},
 		read			: {type:Boolean,default:false},
-		param			: String
+		param			: String,
+		notifyTime		: {type:Date,default:Date.now}
 	});
-	collection = db.model('Notify',NotifySchema);
+	_collection = db.model('Notify',NotifySchema);
 }
 
-exports.log = function(){
-	console.log('test');
+exports.notifyMessage = function(from,to,type,param,callback){
+	var newNotify = new _collection();
+	newNotify.from_id = from;
+	newNotify.to_id = to;
+	newNotify.type = type;
+	newNotify.read = false;
+	newNotify.param = param;
+	newNotify.notifyTime = new Date();
+	newNotify.save(function(err){
+		callback(!err ? newNotify : undefined);
+	});
 }
