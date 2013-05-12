@@ -11,12 +11,19 @@ var
 			email		: String,
 			stat		: String		// 0:友人申請中　1:友人申請受け中  2:友人
 	}),
+	// Notify				from		to			param
+	// 0,Friend	invited		inviter		user				ユーザーでない場合はNotify行かない。
+	// 1		approved	approver	inviter				ユーザーになった場合にはもどりのNotifyはいく
+	// 2.Room	invited		inviter		user		roomId	
+	// 3		joined		joinner		inviter
+	// 4.Chat	say			sayer		logoutuser	roomId						
+	// 
 	UserSchema	= new Schema({
 			user_id		: String,
 			displayName	: String,
 			email		: String,
 			photo		: String,
-			roomInfos	: [ChatSchema],			// id:{ roomid } flag : { 0:invited ,1:join } 
+			roomInfos	: [ChatSchema],			// id:{ roomid } flag : { 0:invited ,1:join ,2:joining}
 			comments	: [ChatSchema],			// id:{ not use } flag : {0:previous 1:current } body :{comment}
 			friends		: [FriendSchema],
 			privates	: {type:String,default:'f'},
@@ -25,7 +32,7 @@ var
 	}),
 	ChatSchema	= new Schema({
 			id			: String,
-			flag		: String,
+			flag		: Number,
 			body		: String,
 			lastAccess	: {type:Date,default:Date.now}
 	}),
@@ -33,7 +40,7 @@ var
 			roomOwner	: String,
 			roomName	: String,
 			member		: [String],
-			chat		: [ChatSchema],
+			chat		: [ChatSchema],				// id:{user.id} flag:{reader's count} body:{message}
 			created		: {type:Date,default:Date.now},
 			lastAccess	: {type:Date,default:Date.now}
 	}),
@@ -52,6 +59,7 @@ exports.init = function()
 	User = mongoose.model('User',UserSchema);
 	Chat = mongoose.model('Chat',ChatSchema);
 	Room = mongoose.model('Room',RoomSchema);
+//	Notify = mongoose.model('Notify',NotifySchema);
 };
 /*
  * ここから作り直し
@@ -350,11 +358,15 @@ exports.sayChat = function(user,roomId,message,flag,callback){
  * project:出力フィールドの指定
  * 戻りは配列。
  * 日付以前　＞　$lt 
- * 件数制限　検索のこと
+ * 件数制限 $limit
  */
 exports.getLog = function(user,roomId,lastAccess,count){
-	Room.aggregate({'$match':{'_id':roomId,'lastAccess':{'$lt':lastAccess}}},{'$unwind':'$comments'},{'$sort':'-1'},{'$project':{'comments':1}},function(err,comments){
-		callback(err ? undefined : comments);
+	Room.aggregate(	{'$match':{'_id':roomId,'lastAccess':{'$gt':lastAccess}}},
+					{'$unwind':'$chat'},
+					{'$sort':'-1'},
+					{'$project':{'chat':1}},
+					{'$limit': count },function(err,chat){
+		callback(err ? undefined : chat);
 	});
 }
 

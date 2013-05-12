@@ -1,5 +1,6 @@
 var so = require('./shareObj'),
-	db = require('./mongo');
+//	db = require('./mongo');
+	db = require('./db');
 
 exports.init = function()
 {
@@ -8,10 +9,10 @@ exports.init = function()
 
 	passport.serializeUser(function(user,done){
 		// ここでDBに保存
-		db.findUser({email : user.emails[0].value},function(userDB){
+		db.User.findUser({email : user.emails[0].value},function(userDB){
 			if(userDB === undefined){	// 新規
 				console.log(' new user ');
-				db.addUser(user,function(err,newUser){
+				db.User.addUser(user,function(err,newUser){
 					console.log('after add user ' ,newUser.id);
 					done(null,newUser.id);
 				});
@@ -24,7 +25,7 @@ exports.init = function()
 	});
 
 	passport.deserializeUser(function(objID,done){
-		db.findUser({_id : objID},function(userDB){
+		db.User.findUser({_id : objID},function(userDB){
 			done(null,userDB);
 		});
 	});

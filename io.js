@@ -2,7 +2,8 @@
  * Module dependencies.
  */
 var		so	= require('./shareObj')	,
-		db	= require('./mongo'),
+//		db	= require('./mongo'),
+		db	= require('./db'),
 		io,
 		users		= {}
 	;
@@ -70,6 +71,8 @@ io.sockets.on('connection',function(socket){
 	 *	TODO:logout中のダイレクトメッセージ
 	 *	TODO:チャットメッセージの送付
 	 */
+	// 前回ログアウト時から今までのチャットメッセージの件数の取得
+	// 前回ログアウト時からの通知メッセージの取得
 	so.ssIds[user.emails[0].value] = socket.id;
 	users[userID] = user;
 	sessionReloadIntervalID = setInterval(function(){
@@ -94,31 +97,31 @@ io.sockets.on('connection',function(socket){
 	 * ここから作り直し
 	 */
 	socket.on('getInviteList',function(msg){
-		db.getInviteList(user,{$in:['0','1','9']},function(list){
+		db.User.getInviteList(user,{$in:['0','1','9']},function(list){
 			socket.emit('gotInviteList',{invite:list});
 		});
 	});
 	socket.on('getFriendList',function(){
-		db.getFriendList(user,function(friends){
+		db.User.getFriendList(user,function(friends){
 			socket.emit('gotFriendList',{friends:friends});	// 知人リストの通知
 		});
 	});
 
 	socket.on('findFriend',function(msg){
 		console.log('findUser',user.id);
-		db.addFriend(user,msg.tgt,function(you){
+		db.User.addFriend(user,msg.tgt,function(you){
 			socket.emit('foundFriend',{you:you,tgt:msg.tgt});
 		});
 	});
 
 	socket.on('approveFriend',function(msg){
-		db.approveFriend(user,msg.info,function(success){
+		db.User.approveFriend(user,msg.info,function(success){
 			socket.emit('approvedFriend',{success:success});
 			notifyMessage('directMessage',msg.info.email,{from:user.email[0].value,msg:'approved'});
 		});
 	});
 	socket.on('cancelFriend',function(msg){
-		db.cancelFriend(user,msg.info,function(success){
+		db.User.cancelFriend(user,msg.info,function(success){
 			socket.emit('cancelledFriend',{success:success});
 		});
 	});
@@ -126,10 +129,33 @@ io.sockets.on('connection',function(socket){
 
 	/*
 	 * あとで治す
+	 * チャットを各ユーザーごとの情報として保存。
+	 * 異なる端末でログインしても、メッセージが読める必要がある
+	 * 
+	 * ver 0.02
+	 * ログインしていない場合、ルームチャットがあったら通知メッセージを作成し、DBに保存する
+	 * 通知メッセージはルーム、メッセージ数、最新メッセージ、最新メッセージ日時を保存
+	 * ログイン時、通知を取得し、ルームリストに表示
+	 * ログイン時、未JOINのチャットは通知メッセージをDBにいれ、クライアントに送信
+	 * ルームを開いた段階で、未受信のログを取得し、ルームにJOINする
+	 * JOINしたら、ログの取得と、通知メッセージをDBから削除する
+	 * ルームを閉じたら、LEAVEし、チャットはDBに保存、通知のみ行う
+	 * ログアウトした場合、通知をDBに保存する
+	 * チャットは、JOINメンバーには即時送信し、非JOINメンバーには即時通知、非ログインメンバーには通知をDBへ
+	 * 1　メンバー　送信
+	 * 2 非JOIN		Notify & DB
+	 * 3 非LOGIN	DB
 	 */
 	socket.on('msg_send',function(msg){	// TODO:ここでルームチェックとルームへのチャットデータの登録を行う
-		socket.to(msg.roomId).emit('msg_push',
-			{uID:socket.handshake.session.userID,msg : msg.msg,roomId:msg.roomId});
+		db.User.sayChat(user,msg.roomId,msg.msg,'0',function(success){
+			if(success){
+				socket.to(msg.roomId).emit('msg_push',
+					{uID:socket.handshake.session.userID,msg : msg.msg,roomId:msg.roomId});
+			}
+			else{
+				socket.emit('msg_send_fail');
+			}
+		});
 	});
 
 	/*
@@ -137,7 +163,8 @@ io.sockets.on('connection',function(socket){
 	 *
 	 */
 	socket.on('invite_room',function(msg){
-		// TODO:tgtUserにdmをおくる。ログインしてない場合はDBに
+		// DBに記録する
+		// tgtにDMを送る
 	});
 	/*
 	 * msg.roomId

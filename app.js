@@ -5,11 +5,14 @@ var
 	 so				= require('./shareObj'),
 	io				= require('./io'),
 	auth			= require('./passport-google'),
-	db				= require('./mongo');
+	db				= require('./db');
+	//db				= require('./mongo');
 	
 
 so.init();
-db.init();
+//db.init();
+
+db.init(so.mongoURL);
 
 // all environments
 so.app.set('secretKey',so.ssKey);         // appにセットしておく
