@@ -5,11 +5,11 @@ var _collection,
 
 exports.collection = function(){
 	return _collection;
-}
+};
 
 exports.schema = function(){
 	return _schema;
-}
+};
 
 exports.init = function(db,chat,friend)
 {
@@ -41,10 +41,11 @@ exports.getInviteList = function(user,beInvite,callback)
 };
 
 // 特定のユーザーのフレンドの一覧を返す
+// idb.users.aggregate({'$unwind':'$comments'},{'$match':{'email':'ume3003@gmail.com','comments.flag':{$ne:0}}}, {'$project':{'comments':1}})
 exports.getFriendList = function(user,callback)
 {
 	var query	= {'friends.user_id':user.id,'friends.stat':'2','comments.flag':'1'},
-		columns = {user_id:1,displayName:2,email:3,comment:4,photo:5,lastAccess:6};
+		columns = {user_id:1,displayName:2,email:3,comments:4,photo:5,lastAccess:6};
 	console.log(query,columns);
 	_collection.find(query,columns,function(err,friends){
 		callback(!err ? friends : undefined);

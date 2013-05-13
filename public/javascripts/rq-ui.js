@@ -40,7 +40,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 					{text :  addFriend + 'を検索します',
 						btns: [	{text : 'ok',callback : 
 							function(){ 
-								ioc.findFriend(addFriend,function(addedFriend){
+								ioc.requestFriend(addFriend,function(addedFriend){
 									var num = $manageItems.length;
 									if(addedFriend !== undefined){
 										$manageItems[num] = setManage($manageItems.length,addedFriend);

@@ -2,10 +2,10 @@
  * Module dependencies.
  */
 var		so	= require('./shareObj')	,
-//		db	= require('./mongo'),
 		db	= require('./db'),
 		io,
-		users		= {}
+		users		= {},
+		rooms		= {}			//{ roomId : {joinmember array}}
 	;
 exports.init = function()
 {
@@ -60,7 +60,10 @@ io.sockets.on('connection',function(socket){
 	var user = socket.handshake.session.user,
 		userID = socket.handshake.session.userID,
 		sessionReloadIntervalID,
+		enterRoom,
+		leaveRoom,
 		notifyMessage;
+	
 
 	console.log('init ',user.id);
 	/*
@@ -68,13 +71,21 @@ io.sockets.on('connection',function(socket){
 	 *	socket.idのメモリキャッシュ；最終的にはRedisにいれる
 	 *	userのキャッシュ　最終的にはRedisにいれる（でも必要？）
 	 *	cookie の定期更新
-	 *	TODO:logout中のダイレクトメッセージ
-	 *	TODO:チャットメッセージの送付
 	 */
-	// 前回ログアウト時から今までのチャットメッセージの件数の取得
 	// 前回ログアウト時からの通知メッセージの取得
-	so.ssIds[user.emails[0].value] = socket.id;
+	db.Notify.findMyNotify(user,function(notifies){
+		console.log('got notify ',notifies);
+		if(notifies !== undefined){
+			for(var i = 0;i < notifies.length;i++){
+				socket.emit('gotNotify',notifies);
+			}
+		}
+	});
+	// ssIdのキャッシュ
+	so.ssIds[user.id] = socket.id;
+	// ユーザーオブジェクトのキャッシュ
 	users[userID] = user;
+	// サーバクッキーの更新のスケジューリング
 	sessionReloadIntervalID = setInterval(function(){
 		socket.handshake.session.reload(function(){
 			socket.handshake.session.touch().save();
@@ -92,9 +103,38 @@ io.sockets.on('connection',function(socket){
 		else{
 			console.log('target doesnt login');
 		}
-	},
+	};
+	enterRoom = function(roomId,userId,socket){
+		socket.join(roomId);
+		if(rooms[roomId] === undefined){
+			rooms[roomId] = [];
+		}
+		rooms[roomId].push(userId);
+	};
+	leaveRoom = function(roomId,userId,socket){
+		var roomInfo =  rooms[roomId],
+			idx ;
+		console.log('before slice',rooms[roomId]);
+		idx = roomInfo.indexof(userId);
+		if(idx >= 0){
+			roomInfo.slice(idx,1);
+		}
+		console.log('after slice',rooms[roomId]);
+		socket.leave(room.id);
+	};
 	/*
 	 * ここから作り直し
+	 */
+	/*
+	 *  通知
+	 */
+	socket.on('readNotify',function(mes){
+		db.readNotify(user,mes.article,function(success){
+			socket.emit('redNotify',{success:success});
+		});
+	});
+	/*
+	 *フレンド関連
 	 */
 	socket.on('getInviteList',function(msg){
 		db.User.getInviteList(user,{$in:['0','1','9']},function(list){
@@ -107,17 +147,23 @@ io.sockets.on('connection',function(socket){
 		});
 	});
 
-	socket.on('findFriend',function(msg){
-		console.log('findUser',user.id);
+	socket.on('requestFriend',function(msg){
+		console.log('requestUser',user.id);
 		db.User.addFriend(user,msg.tgt,function(you){
-			socket.emit('foundFriend',{you:you,tgt:msg.tgt});
+			socket.emit('requestedfriend',{you:you,tgt:msg.tgt});
 		});
 	});
 
 	socket.on('approveFriend',function(msg){
 		db.User.approveFriend(user,msg.info,function(success){
 			socket.emit('approvedFriend',{success:success});
-			notifyMessage('directMessage',msg.info.email,{from:user.email[0].value,msg:'approved'});
+		//	notifyMessage('directMessage',msg.info.id,{from:user.id,msg:'approved'});
+
+			// 開いていない人にはNotifyを保存
+			db.Notify.approveNotify(user.id,msg.info.user_id,function(notify){							
+				// ログインしてるならDNを送信
+				notifyMessage('directMessage',msg.info.user_id,{from:user.id,msg:'approved'});
+			});
 		});
 	});
 	socket.on('cancelFriend',function(msg){
@@ -142,15 +188,26 @@ io.sockets.on('connection',function(socket){
 	 * ルームを閉じたら、LEAVEし、チャットはDBに保存、通知のみ行う
 	 * ログアウトした場合、通知をDBに保存する
 	 * チャットは、JOINメンバーには即時送信し、非JOINメンバーには即時通知、非ログインメンバーには通知をDBへ
-	 * 1　メンバー　送信
-	 * 2 非JOIN		Notify & DB
-	 * 3 非LOGIN	DB
+	 * 1　メンバー　chat + 送信
+	 * 2 非JOIN		chat + DirectNotify + NotifyDB
+	 * 3 非LOGIN	chat + NotifyDB
 	 */
 	socket.on('msg_send',function(msg){	// TODO:ここでルームチェックとルームへのチャットデータの登録を行う
-		db.User.sayChat(user,msg.roomId,msg.msg,'0',function(success){
-			if(success){
-				socket.to(msg.roomId).emit('msg_push',
-					{uID:socket.handshake.session.userID,msg : msg.msg,roomId:msg.roomId});
+		db.Room.sayChat(user.id,msg.roomId,msg.msg,'0',function(chat){
+			if(chat !== undefined){
+				// ルームを開いているメンバーに直接送信
+				socket.to(msg.roomId).emit('msg_push',{uID:socket.handshake.session.userID,msg : msg.msg,roomId:msg.roomId});
+				db.Room.findUnjoinMember(msg.roomId,rooms[roomId],function(member){
+					if(member !== undefined){
+						for(var i = 0; i < member.length;i++){
+							// 開いていない人にはNotifyを保存
+							db.Notify.chatNotify(roomId,member[i],chat.id,function(notify){							
+								// ログインしてるならDNを送信
+								notifyMessage('someoneSay',member[i],{roomId:roomId,chatId:chat.id,notifyId:notify.id});
+							});
+						}
+					}
+				});
 			}
 			else{
 				socket.emit('msg_send_fail');
@@ -162,59 +219,77 @@ io.sockets.on('connection',function(socket){
 	 * msg.roomId msg.tgtUser
 	 *
 	 */
-	socket.on('invite_room',function(msg){
+	socket.on('inviteRoom',function(msg){
 		// DBに記録する
 		// tgtにDMを送る
 	});
 	/*
 	 * msg.roomId
 	 * 永続的にチャットルームにはいる
+	 * 同時にチャットルームを開く
 	 */
-	socket.on('join_room',function(msg){
-		db,joinRoom(user,msg.roomId,function(success){
+	socket.on('joinRoom',function(msg){
+		db.joinRoom(user,msg.roomId,function(success){
 			if(success){
-				socket.join(roomId);
+				enterRoom(msg.roomId,user.id,socket);
 			}
-			io.socket.in(roomId).emit('newoneJoined',{id:user.id});		// 入室したルームにブロードキャスト
+			socket.to(roomId).emit('newoneJoined',{id:user.id});		// 入室したルームにブロードキャスト
 			socket.emit('joinedRoom',{success:success});				// 自分自身に入室成功を返す
+		});
+	});
+	/*
+	 * 永続的にチャットルームからぬける
+	 * 同時にチャットルームを閉じる
+	 */
+	socket.on('leaveRoom',function(msg){
+		db.leaveRoom(msg,msg.roomId,function(success){
+			if(success){
+				leaveRoom(msg.roomId,user.id,socket);
+			}
+			socket.to(roomId).emit('someoneLeft',{id:user.id});		// 退出したルームにブロードキャスト
+			socket.emit('leftRoom',{success:success});					// 自分自身に退出成功を返す
 		});
 	});
 	/*
 	 * チャットルームを開く。フラグがたち、以後メッセージが配信される
 	 */
-	socket.on('enterRoom',function(msg){
+	socket.on('openRoom',function(msg){
 		db.Room.findRoomShort(msg.roomId,function(room){
 			if(room !== undefined){
-				socket.join(room.id);
-				// TODO:通知終了
+				enterRoom(room.id,user.id,socket);
 			}
-			socketemit('enteredRoom',{success:room !== undefined});
+			socket.emit('openedRoom',{room:room});
 		});
 	});
-	socket.on('leaveRoom',function(msg){
+	/*
+	 *	チャットルームを閉じる。以後、メッセージは通知に変わる
+	 */
+	socket.on('closeRoom',function(msg){
 		db.Room.findRoomShort(msg.roomId,function(room){
 			if(room){
-				// TODO:通知へ
-				socket.leave(room.id);
+				leaveRoom(msg.roomId,user.id,socket);
 			}
-			socket.emit('leftRoom',{success:room !== undefined});
-		}
+			socket.emit('closedRoom',{room:room});
+		});
 	});
-	socket.on('msg_createRoom',function(msg){
+	/*
+	 * チャットルームを作り、永続的に入る
+	 */
+	socket.on('createRoom',function(msg){
 		var roomInfo = {roomOwner : user.id,roomName : msg,member : [user.id]};
 
 		db.createRoom(user,roomInfo,function(room){
-			if(!room){
-				socket.join(room.Id);
+			if(room !== undefined){
+				enterRoom(room.id,user.id,socket);
 			}
-			socket.emit('roomCreated',{room:room});
+			socket.emit('CreatedRoom',{room:room});
 		});
 	});
 	/*
 	 * ダイレクトメッセージ系　とりあえず実装
 	 */
 	socket.on('directMessage',function(msg){
-		notifyMessage('directMessage',msg.to,{from:user.emails[0].value,msg:msg.msg});
+		notifyMessage('directMessage',msg.to,{from:user.id,msg:msg.msg});
 	});
 
 	/*
@@ -226,7 +301,7 @@ io.sockets.on('connection',function(socket){
 			// TODO:通知処理変更
 			console.log(success);
 		});
-		delete so.ssIds[user.emails[0].value];
+		delete so.ssIds[user.id];
 		delete users[userID];
 		socket.broadcast.emit('logout',userID);
 	});

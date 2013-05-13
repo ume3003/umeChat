@@ -11,13 +11,6 @@ var
 			email		: String,
 			stat		: String		// 0:友人申請中　1:友人申請受け中  2:友人
 	}),
-	// Notify				from		to			param
-	// 0,Friend	invited		inviter		user				ユーザーでない場合はNotify行かない。
-	// 1		approved	approver	inviter				ユーザーになった場合にはもどりのNotifyはいく
-	// 2.Room	invited		inviter		user		roomId	
-	// 3		joined		joinner		inviter
-	// 4.Chat	say			sayer		logoutuser	roomId						
-	// 
 	UserSchema	= new Schema({
 			user_id		: String,
 			displayName	: String,

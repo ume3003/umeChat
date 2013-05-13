@@ -4,7 +4,7 @@ var _collection,
 
 exports.collection = function(){
 	return _collection;
-}
+};
 
 exports.init = function(db,chat){
 	_schema	= new db.Schema({
@@ -17,14 +17,14 @@ exports.init = function(db,chat){
 	});
 	_chat = chat;
 	_collection = db.model('Room',_schema);
-}
+};
 
 /*
  * roomデータから入室しているルーム情報をとる。Idとname
  */
 exports.getJoinRoomList = function(user,callback){
-	_collection.find({member:user.id},function(rooms){
-		callback(rooms);
+	_collection.find({member:user.id},function(err,rooms){
+		callback(!err ? rooms : undefined);
 	});
 }
 
@@ -67,7 +67,30 @@ exports.removeRoomMember = function(roomId,userId,callback){
 		callback(!err);
 	});
 }
-
+exports.getRoomMember = function(roomId,callback){
+	_collection.find({_id:roomId},{roomName:1,member:2},function(err,roomInfo){
+		if(!err && roomInfo !== undefined && roomInfo.member !== undefined){
+			callback(roomInfo[0].member);
+		}
+		else{
+			callback(undefined);
+		}
+	});
+}
+exports.getLeftRoomMember = function(roomId,joinMem,callback){
+	var leftMember = undefined;
+	exports.getRoomMember(roomId,function(allMember){
+		if(allMember !== undefined){
+			leftMember = [];
+			for(var i = 0;i < allMember.length;i++){
+				if(joinMem.indexof(allMember[i]) < 0){
+					leftMember.push(allMember[i]);
+				}
+			}
+		}
+		callback(leftMember);
+	});
+}
 /*
  * チャットを発言する
  * ここだけかなり特別。チャットのIDをNotifyで使う

@@ -14,7 +14,7 @@ require.config({
 define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],function($){
 	var socket,
 		cbks = {},
-		findFriendCallback = [],
+		requestFriendCallback = [],
 		getFriendListCallback = undefined,
 	init = function(param){
 		console.log('connect to server');
@@ -41,9 +41,9 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		});
 		// 検索したユーザーがいたかの返答
 		socket.on('foundFriend',function(msg){
-			if(findFriendCallback[msg.tgt] !== undefined){
-				findFriendCallback[msg.tgt](msg.you);
-				findFriendCallback[msg.tgt] = undefined;
+			if(requestFriendCallback[msg.tgt] !== undefined){
+				requestFriendCallback[msg.tgt](msg.you);
+				requestFriendCallback[msg.tgt] = undefined;
 			}
 		});
 		// 申請承認結果
@@ -71,10 +71,10 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 	},
 	// manageで文字列をいれたメールアドレスがユーザーにいるか検索。
 	// いない場合はエントリーコードをつくって返してくれる
-	findFriend = function(findString,callback){
-		if(findFriendCallback[findString] === undefined){
-			findFriendCallback[findString] = callback;
-			socket.emit('findFriend',{'tgt':findString});
+	requestFriend = function(findString,callback){
+		if(requestFriendCallback[findString] === undefined){
+			requestFriendCallback[findString] = callback;
+			socket.emit('requestFriend',{'tgt':findString});
 		}
 	},
 	// フレンドの一覧を取得
@@ -122,7 +122,7 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		logout : logout,
 		cancelFriend : cancelFriend,
 		approveFriend : approveFriend,
-		findFriend : findFriend,
+		requestFriend : requestFriend,
 		getFriendList : getFriendList,
 		getRoomList : getRoomList,
 		getChatList : getChatList,

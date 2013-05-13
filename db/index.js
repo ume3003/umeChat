@@ -59,3 +59,17 @@ exports.joinRoom = function(user,roomId,callback){
 		}
 	});
 }
+//  db.users.update({'_id':userId}, {$push:{"room_ids":"0"}} )
+//  roomから退出する
+exports.leaveRoom = function(user,roomId,callback){
+	exports.Room.removeRoomMember(roomId,user.id,function(err){
+		if(!err){
+			exports.User.removeRoomInfo(user.id,roomId,function(success){
+				callback(success);
+			});
+		}
+		else{
+			callback(!err);
+		}
+	});
+}
