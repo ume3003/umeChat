@@ -23,6 +23,7 @@ exports.init = function(db,chat,friend)
 		photo		: String,
 		roomInfos	: [chat.schema()],			// id:{ roomid } flag : { 0:invited ,1:join ,2:joining}
 		comments	: [chat.schema()],			// id:{ not use } flag : {0:previous 1:current } body :{comment}
+		lastComment	: String,					// TODO:commentsのflagは使わないように変更
 		friends		: [friend.schema()],
 		privates	: {type:String,default:'f'},
 		created		: {type:Date,default:Date.now},
@@ -167,10 +168,7 @@ exports.findUser = function(query,callback){
 		if(docs.length > 0){
 			uData	= docs[0];
 			uData.photo = '/images/macallan.jpg';
-			uData.comment = 'sample comment';
-			if(docs[0].comments && docs[0].comments.length > 0){
-				uData.comment = docs[0].comments[0].body;
-			}
+			uData.comment = docs[0].lastComment;
 		}
 		callback(uData);
 	});
@@ -179,11 +177,13 @@ exports.findUser = function(query,callback){
  * saveでやらないとidがとれない。
  */
 exports.addUser = function(uData,callback){
-	var newUser = new _collection();
+	var newUser = new _collection(),
+		comment = {flag:'1',body:'nothing',lastAccess:new Date()};
 	newUser.user_id		= uData.identifier;
 	newUser.displayName = uData.displayName;
 	newUser.email		= uData.emails[0].value;
-	newUser.comments	= {flag:'1',body:'nothing',lastAccess:new Date()};
+	newUser.comments	= [comment];
+	newUser.lastComment		= comment.body;
 	exports.findUser({"email" : newUser.email},function(dum){
 		if(dum === undefined){
 			console.log(newUser);
@@ -220,6 +220,8 @@ exports.logout = function(user,callback){
 	var la = {lastAccess:new Date()};
 	exports.modifyStatus(user,la,callback);
 }
+// TODO:ラストコメントを更新するように変更
+// db.users.update({'email':'ume3003@gmail.com'},{$set:{lastComment:'aaaa'},$push:{comments:{flag:'1',body:'aaaa'}}})
 exports.addComment = function(user,comment,callback){
 	_collection.update({_id:user.id,'comments.flag':'1'},{$set:{'comments.$.lag':'0'}},function(err){
 		_collection.update({_id:user.id},{$push:{comments:{flag:'1',body:comment,lastAccess:new Date()}}},function(err){
