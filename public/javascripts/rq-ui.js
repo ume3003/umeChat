@@ -147,7 +147,9 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			if(chatCnt < 10){
 				ioc.getLog({roomId:roomInfo._id,lastAccess:lastAcc,count:10 - chatCnt},function(logs){
 					if(logs !== undefined){
-						console.log(logs);
+						for(var i = 0 ; i < logs.length;i++){
+							console.log(logs[i]);
+						}
 					}
 				});
 			}			

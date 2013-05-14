@@ -205,9 +205,9 @@ chatObject = io.sockets.on('connection',function(socket){
 					if(member !== undefined){
 						for(var i = 0; i < member.length;i++){
 							// 開いていない人にはNotifyを保存
-							db.Notify.chatNotify(roomId,member[i],chat.id,function(notify){							
+							db.Notify.chatNotify(msg.roomId,member[i],chat.id,function(notify){							
 								// ログインしてるならDNを送信
-								notifyMessage('someoneSay',member[i],{roomId:roomId,chatId:chat.id,notifyId:notify.id});
+								notifyMessage('someoneSay',member[i],{roomId:msg.roomId,chatId:chat.id,notifyId:notify.id});
 							});
 						}
 					}

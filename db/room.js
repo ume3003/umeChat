@@ -1,6 +1,7 @@
 var _collection,
 	_schema,
 	_chat,
+	_db,
 	roomFieldS	= {
 		roomOwner :1,
 		roomName :2,
@@ -24,6 +25,7 @@ exports.init = function(db,chat){
 			lastAccess	: {type:Date,default:Date.now}
 	});
 	_chat = chat;
+	_db = db;
 	_collection = db.model('Room',_schema);
 };
 
@@ -82,7 +84,7 @@ exports.removeRoomMember = function(roomId,userId,callback){
 }
 exports.getRoomMember = function(roomId,callback){
 	_collection.find({_id:roomId},{roomName:1,member:2},function(err,roomInfo){
-		if(!err && roomInfo !== undefined && roomInfo.member !== undefined){
+		if(!err && roomInfo !== undefined && roomInfo[0].member !== undefined){
 			callback(roomInfo[0].member);
 		}
 		else{
@@ -91,12 +93,15 @@ exports.getRoomMember = function(roomId,callback){
 	});
 }
 exports.getLeftRoomMember = function(roomId,joinMem,callback){
-	var leftMember = undefined;
+	var leftMember = undefined,
+		joinString = joinMem.join(',');
+	console.log('left joinM',joinMem,joinString);
 	exports.getRoomMember(roomId,function(allMember){
+		console.log('all mem ' ,allMember);
 		if(allMember !== undefined){
 			leftMember = [];
 			for(var i = 0;i < allMember.length;i++){
-				if(joinMem.indexof(allMember[i]) < 0){
+				if(joinString.indexOf(allMember[i]) < 0){
 					leftMember.push(allMember[i]);
 				}
 			}
@@ -123,21 +128,41 @@ exports.sayChat = function(userId,roomId,message,flag,callback){
 
 /*
  * 指定日時より前のチャットを指定件数だけ取得する
- * db.users.aggregate([{$unwind:"$comments"},{$sort:{"comments.lastAccess":-1}},{$project:{"comments":1}}])
+ * db.rooms.aggregate({'$unwind':'$chat'},
+ *	{'$match':{'_id':ObjectId('51921a3daaf6f5000000000d')}},
+ *	{'$match':{ 'chat.lastAccess': { '$lt': ISODate("2013-05-14T11:04:50.546Z") } } }, 
+ *	{ '$project': { chat: 1,_id:0 } },
+ *	{'$sort':{'chat.lastAccess':-1}},
+ *	{'$limit':5},
+ *	{'$sort':{'chat.lastAccess':1}})
  * unwind:embedded docの展開
  * soft:展開したdocのソート
  * project:出力フィールドの指定
  * 戻りは配列。
  * 日付以前　＞　$lt 
  * 件数制限 $limit
+ * aggrigateはフィルタを順に処理していくので、
+ * ソートして、後ろから５件とり、その５件を昇順にソートして渡す、とか可能。
+ * chatの埋め込みドキュメントを展開する（レコード扱いになる？）
+ * idが該当するレコードに絞る
+ * 記録日以前のレコードに絞る
+ * chatのフィールドだけ表示。デフォルトだと_idのフィールドもでちゃうので０指定して隠す
+ * 新しい順からとるので−１ソート
+ * 前から５件とる
+ * ５件を古い順にソートして返す
  */
 exports.getLog = function(user,roomId,lastAccess,count,callback){
-	_collection.aggregate(	{'$match':{'_id':roomId,'lastAccess':{'$gt':lastAccess}}},
-					{'$unwind':'$chat'},
-					{'$sort':'-1'},
-					{'$project':{'chat':1}},
-					{'$limit': count },function(err,chat){
-		callback(err ? undefined : chat);
+	console.log('origin String ',lastAccess);
+	var dLast = new Date(lastAccess);
+	_collection.aggregate({'$unwind':'$chat'},
+					{'$match':{'_id':_db.Types.ObjectId(  roomId  )}},
+					{'$match':{'chat.lastAccess' : {'$lt':dLast}}},
+					{'$project' : {'chat':1,'_id':0}},
+					{'$sort' : {'chat.lastAccess': -1}}, 
+					{'$limit': count },
+					{'$sort' : {'chat.lastAccess': 1}}, 
+					function(err,docs){
+		callback(!err ? docs : undefined);
 	});
 }
 
