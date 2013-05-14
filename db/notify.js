@@ -70,6 +70,11 @@ exports.findMyNotify = function(me,callback){
 		callback(notifies);
 	});
 }
+exports.findUnreadChatNotify = function(me,roomId,callback){
+	_collection.find({to_id:me.id,read:false,type:4,from_id:roomId},{from_id:1,type:2,param:3,notifyTime:4},function(err,notifies){
+		callback(notifies);
+	});
+}
 /*
  *	通知を既読にする
  *	通知IDを配列で渡すこと

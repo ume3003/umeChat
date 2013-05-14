@@ -17,6 +17,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	var
 		i,
 		tabIndex = -1,
+		currentRoom = undefined,
 		$tabItem,
 		$scroll  = {},					// スクロール用のオブジェクト
 		$tabBase	= [$('#friendBase'),$('#roomBase'),$('chatBase'),$('#manageBase')],
@@ -28,6 +29,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	$manageBox		= $('#newFriendBox'),
 		$manageInput = $('#newFriend'),
 		$manageBtn = $('#newFriendAdd'),
+	$detailWin	= $('#detailWin').corner(),	// 詳細表示用ウィンドウ
 	$friendItems = [],				// フレンドリストページのフレンドアイテムオブジェクト
 	$roomItems = [],				// チャットルームリストページのルームアイテムオブジェクト
 	$chatItems = [],
@@ -81,6 +83,36 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		$baseHead.show();
 		
 		prepareAddFriendbox();
+		$chatEntry.keypress(function(event){
+			var $area = $(this),
+				val;
+			if(event.keyCode === 13){
+				if(event.shiftKey !== true){
+					val = $(this).val();
+					if(val.length > 0){
+						console.log('say:' + $(this).val());
+						ioc.sayChat({roomId:currentRoom,msg:val},function(msg){
+							console.log('receive myself',msg);
+						});
+						$(this).val("");
+						$(this).get(0).setSelectionRange(0,0);
+						$(this).focus();
+						event.preventDefault();
+					}
+				}
+			}
+				
+		});
+		$('div.textEllipsis').hover(
+			function(){ 
+				$detailWin.text($(this).text());
+				var pos = $(this).offset();
+				$detailWin.css({'top': pos.top + $(this).height() + 'px','left':(pos.left + 10) + 'px'});
+				$detailWin.show();
+			},
+			function(){
+				$detailWin.hide();
+		});
 	},
 	createItem = function(num,height,listClass){
 		var $listItem = $scroll[num].append('<div/>').find(':last');	// タブのリスト本体
@@ -88,32 +120,59 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		if(height !== undefined){  $listItem.css({'height':height}); }
 		return $listItem;
 	},
+	makeChatPage = function(roomInfo,tgtInfo){
+		var $roomPict = $('#roomPict'),
+			$roomName = $('#roomName'),
+			$roomCnt  = $('#roomCnt');
+		// 最終的にはいろいろキャッシュ。とりあえず、現状は取得	
+		console.log(roomInfo);
+		currentRoom = roomInfo._id;
+		if(roomInfo.mode == 0){	//  個人チャットモード
+			$roomPict.css('background-image','url(' + tgtInfo.photo + ')');
+			$roomName.text(tgtInfo.displayName);
+			$roomCnt.text('2');
+		}
+		else{
+			$roomName.text(roomInfo.member.join(','));
+			$roomCnt.text(roomInfo.member.length);
+		}
+		// 最新のチャットを取ってくる。
+		ioc.getUnreadChat({roomId:roomInfo._id},function(articles){
+			var chatCnt = articles.length,
+			lastAcc = chatCnt === 0 ? new Date() : articles[length -1].notifyTime;
+			// 未読から
+			console.log('article',articles);
+			// 未読＋既読１０行分
+			console.log('last time ' ,lastAcc);
+			if(chatCnt < 10){
+				ioc.getLog({roomId:roomInfo._id,lastAccess:lastAcc,count:10 - chatCnt},function(logs){
+					if(logs !== undefined){
+						console.log(logs);
+					}
+				});
+			}			
+		});
+	},
 	setFriend = function(i,doc){
 		var $listItem = createItem(0,'52px','listDocBox');
 		console.log(doc);
 		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + doc.photo + ')');
 		$listItem.append('<div/>').find(':last').addClass('textM flName').text(doc.displayName);
-		$listItem.append('<div/>').find(':last').addClass('textS flComm textEllipsis').text(doc.comment);
+		$listItem.append('<div/>').find(':last').addClass('textS flComm textEllipsis').text(doc.lastComment);
 		(function(arg){
 			$listItem.click(function(){
-				uiparts.showDlg(
-					{text : doc.name ,
-						btns: [	{text : 'ok',callback : 
-							function(){ 
-								console.log(doc.email);
-								uiparts.closeDlg();
-							}},
-							{text : 'cancel',callback : 
-							function(){
-								console.log(doc.email);
-								uiparts.closeDlg();
-							}}
-						]
-					});
-			});
-			$listItem.dblclick(function(){
-				showTab(2,function(){ // TODO:開いたチャットの内容の取得
-					console.log(arg,doc.user_id);
+				ioc.startChatTo({tgtId:doc._id},function(room){
+					if(room !== undefined){
+						console.log('FriendClick',room);
+						ioc.openRoom({roomId:room._id},function(success){
+							if(success){
+								makeChatPage(room,doc);
+								showTab(2,function(){
+									console.log(arg,room);
+								});
+							}
+						});
+					}
 				});
 			});
 		})(i);

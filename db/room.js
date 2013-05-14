@@ -1,6 +1,13 @@
 var _collection,
 	_schema,
-	_chat;
+	_chat,
+	roomFieldS	= {
+		roomOwner :1,
+		roomName :2,
+		member :3,
+		created:4,
+		lastAccess:5
+	};
 
 exports.collection = function(){
 	return _collection;
@@ -11,6 +18,7 @@ exports.init = function(db,chat){
 			roomOwner	: String,
 			roomName	: String,
 			member		: [String],
+			mode		: Number,
 			chat		: [chat.schema()],				// id:{user.id} flag:{reader's count} body:{message}
 			created		: {type:Date,default:Date.now},
 			lastAccess	: {type:Date,default:Date.now}
@@ -27,8 +35,12 @@ exports.getJoinRoomList = function(user,callback){
 		callback(!err ? rooms : undefined);
 	});
 }
-
-
+exports.findChat = function(user,tgtId,callback){
+	_collection.aggregate({'$match':{member:user.id}},{'$match':{member:tgtId}},{'$match':{mode:0}},
+			{'$project':{_id:1,roomOwner:2,roomName:3,member:4,mode:5,created:6,lastAccess:7}},function(err,rooms){
+		callback(!err ? rooms : undefined);
+	});
+}
 exports.findRoomShort = function(roomId,callback){
 	_collection.find({_id : roomId},roomFieldS,function(err,docs){
 		callback(docs.length > 0 ? docs[0] : undefined);
@@ -51,6 +63,7 @@ exports.addRoom = function(roomInfo,callback){
 	room.roomName = roomInfo.roomName;
 	room.member = roomInfo.member;
 	room.chat = roomInfo.chat;
+	room.mode = roomInfo.mode !== undefined ? roomInfo.mode : 1;
 	room.save(function(err){
 		callback(!err ? room : undefined);
 	});
@@ -118,7 +131,7 @@ exports.sayChat = function(userId,roomId,message,flag,callback){
  * 日付以前　＞　$lt 
  * 件数制限 $limit
  */
-exports.getLog = function(user,roomId,lastAccess,count){
+exports.getLog = function(user,roomId,lastAccess,count,callback){
 	_collection.aggregate(	{'$match':{'_id':roomId,'lastAccess':{'$gt':lastAccess}}},
 					{'$unwind':'$chat'},
 					{'$sort':'-1'},

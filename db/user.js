@@ -45,10 +45,11 @@ exports.getInviteList = function(user,beInvite,callback)
 // idb.users.aggregate({'$unwind':'$comments'},{'$match':{'email':'ume3003@gmail.com','comments.flag':{$ne:0}}}, {'$project':{'comments':1}})
 exports.getFriendList = function(user,callback)
 {
-	var query	= {'friends.user_id':user.id,'friends.stat':'2','comments.flag':'1'},
-		columns = {user_id:1,displayName:2,email:3,comments:4,photo:5,lastAccess:6};
+	var query	= {'friends.user_id':user.id,'friends.stat':'2'},
+		columns = {user_id:1,displayName:2,email:3,lastComment:4,photo:5,lastAccess:6};
 	console.log(query,columns);
 	_collection.find(query,columns,function(err,friends){
+		console.log(friends[0]);
 		callback(!err ? friends : undefined);
 	});
 }
@@ -162,7 +163,6 @@ exports.cancelFriend = function(user,friend,callback){
 // 引数のqueryは検索条件にそのままわたすのでフィールド：値で。
 // テスト済み
 exports.findUser = function(query,callback){
-	query["comments.flag"] = "1";
 	_collection.find(query,function(err,docs){
 		var uData	= undefined;
 		if(docs.length > 0){
@@ -178,12 +178,13 @@ exports.findUser = function(query,callback){
  */
 exports.addUser = function(uData,callback){
 	var newUser = new _collection(),
-		comment = {flag:'1',body:'nothing',lastAccess:new Date()};
+		comment = {body:'nothing',lastAccess:new Date()};
 	newUser.user_id		= uData.identifier;
 	newUser.displayName = uData.displayName;
 	newUser.email		= uData.emails[0].value;
 	newUser.comments	= [comment];
 	newUser.lastComment		= comment.body;
+	newUser.photo = 'public/images/none.jpg';
 	exports.findUser({"email" : newUser.email},function(dum){
 		if(dum === undefined){
 			console.log(newUser);
@@ -220,13 +221,10 @@ exports.logout = function(user,callback){
 	var la = {lastAccess:new Date()};
 	exports.modifyStatus(user,la,callback);
 }
-// TODO:ラストコメントを更新するように変更
-// db.users.update({'email':'ume3003@gmail.com'},{$set:{lastComment:'aaaa'},$push:{comments:{flag:'1',body:'aaaa'}}})
+
 exports.addComment = function(user,comment,callback){
-	_collection.update({_id:user.id,'comments.flag':'1'},{$set:{'comments.$.lag':'0'}},function(err){
-		_collection.update({_id:user.id},{$push:{comments:{flag:'1',body:comment,lastAccess:new Date()}}},function(err){
+	_collection.update({_id:user.id},{$set:{lastComment:comment},$push:{comments:{body:comment,lastAccess:new Date()}}},function(err){
 			callback(!err);
-		});
 	});
 }
 

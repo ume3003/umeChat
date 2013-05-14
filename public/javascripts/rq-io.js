@@ -13,9 +13,9 @@ require.config({
 });
 define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],function($){
 	var socket,
-		cbks = {},
-		requestFriendCallback = [],
-		getFriendListCallback = undefined,
+		cbks = {};
+		cbks.requestFriend = {};
+
 	init = function(param){
 		console.log('connect to server');
 		socket = io.connect();
@@ -34,16 +34,16 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		});
 		// サーバから帰ってきたフレンドリストをコールバックへ
 		socket.on('gotFriendList',function(msg){
-			if(getFriendListCallback !== undefined){
-				getFriendListCallback(msg.friends);
-				getFriendListCallback = undefined;
+			if(cbks.getFriendList !== undefined){
+				cbks.getFriendList(msg.friends);
+				cbks.getFriendList = undefined;
 			}
 		});
 		// 検索したユーザーがいたかの返答
-		socket.on('foundFriend',function(msg){
-			if(requestFriendCallback[msg.tgt] !== undefined){
-				requestFriendCallback[msg.tgt](msg.you);
-				requestFriendCallback[msg.tgt] = undefined;
+		socket.on('requestedFriend',function(msg){
+			if(cbks.requestFriend[msg.tgt] !== undefined){
+				cbks.requestFriend[msg.tgt](msg.you);
+				cbks.requestFriend[msg.tgt] = undefined;
 			}
 		});
 		// 申請承認結果
@@ -59,7 +59,79 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 				cbks.cancelFriend = undefined;
 			}
 		});
+		socket.on('redNotify',function(msg){
+			if(cbks.readNotify !== undefined){
+				cbks.readNotify(msg);
+				cbks.readNotify = undefined;
+			}
+			console.log(msg);
+		});
+		socket.on('joinedRoom',function(msg){
+			if(cbks.joinRoom !== undefined){
+				cbks.joinRoom(msg);
+				cbks.joinRoom = undefined;
+			}
+		});
+		socket.on('leftRoom',function(msg){
+			if(cbks.leftRoom !== undefined){
+				cbks.leftRoom(msg);
+				cbks.leftRoom = undefined;
+			}
+		});
+		socket.on('openedRoom',function(msg){
+			if(cbks.openRoom !== undefined){
+				cbks.openRoom(msg);
+				cbks.openRoom = undefined;
+			}
+		});
+		socket.on('closedRoom',function(msg){
+			if(cbks.closeRoom !== undefined){
+				cbks.closeRoom(msg);
+				cbks.closeRoom = undefined;
+			}
+		});
+		socket.on('createdRoom',function(msg){
+			if(cbks.createRoom !== undefined){
+				cbks.createRoom(msg);
+				cbks.createRoom = undefined;
+			}
+		});
+		socket.on('startedChatTo',function(msg){
+			if(cbks.startChatTo !== undefined){
+				cbks.startChatTo(msg);
+				cbks.startChatTo = undefined;
+			}
+		});
+		socket.on('gotUnreadChat',function(msg){
+			if(cbks.getUnreadChat !== undefined){
+				cbks.getUnreadChat(msg);
+				cbks.getUnreadChat = undefined;
+			}
+		});
+		socket.on('saidChat',function(msg){
+			if(cbks.sayChat !== undefined){
+				cbks.sayChat(msg);
+				cbks.sayChat = undefined;
+			}
+		});
+		socket.on('gotLog',function(msg){
+			if(cbks.getLog !== undefined){
+				cbks.getLog(msg);
+				cbks.getLog = undefined;
+			}
+		});
+		/*
+		socket.on('',function(msg){
+			if(cbks. !== undefined){
+				cbks.(msg);
+				cbks. = undefined;
+			}
+		});
+		*/
 		socket.on('directedMessage',function(msg){
+			console.log(msg);
+		});
+		socket.on('someoneSaid',function(msg){
 			console.log(msg);
 		});
 	},
@@ -69,19 +141,16 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 	getSocket = function(){
 		return socket;
 	},
-	// manageで文字列をいれたメールアドレスがユーザーにいるか検索。
-	// いない場合はエントリーコードをつくって返してくれる
-	requestFriend = function(findString,callback){
-		if(requestFriendCallback[findString] === undefined){
-			requestFriendCallback[findString] = callback;
-			socket.emit('requestFriend',{'tgt':findString});
+	readNotify = function(notifyIds,callback){
+		if(cbks.readNotify === undefined){
+			cbks.readNotify = callback;
+			socket.emit('readNotify',{article:notifyIds});
 		}
 	},
 	// フレンドの一覧を取得
 	getFriendList = function(callback){
-		console.log('getFriendList');
-		if(getFriendListCallback === undefined ){
-			getFriendListCallback = callback;
+		if(cbks.getFriendList === undefined ){
+			cbks.getFriendList = callback;
 			socket.emit('getFriendList');
 		}
 	},
@@ -110,6 +179,69 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			socket.emit('cancelFriend',{info:manage});
 		}
 	},
+	// manageで文字列をいれたメールアドレスがユーザーにいるか検索。
+	// いない場合はエントリーコードをつくって返してくれる
+	requestFriend = function(findString,callback){
+		if(cbks.requestFriend[findString] === undefined){
+			cbks.requestFriend[findString] = callback;
+			socket.emit('requestFriend',{'tgt':findString});
+		}
+	},
+	inviteRoom = function(msg,callback){
+		if(cbks.inviteRoom === undefined){
+			cbks.inviteRoom = callback;
+			socket.emit('inviteRoom',msg);
+		}
+	},
+	joinRoom = function(msg,callback){
+		if(cbks.joinRoom === undefined){
+			cbks.joinRoom = callback;
+			socket.emit('joinRoom',msg);
+		}
+	},
+	leaveRoom = function(msg,callback){
+		if(cbks.leaveRoom === undefined){
+			cbks.leaveRoom = callback;
+			socket.emit('leaveRoom',msg);
+		}
+	},
+	openRoom = function(msg,callback){
+		if(cbks.openRoom === undefined){
+			cbks.openRoom = callback;
+			socket.emit('openRoom',msg);
+		}
+	},
+	closeRoom = function(msg,callback){
+		if(cbks.closeRoom === undefined){
+			cbks.closeRoom = callback;
+			socket.emit('closeRoom',msg);
+		}
+	},
+	startChatTo = function(msg,callback){
+		if(cbks.startChatTo === undefined){
+			cbks.startChatTo = callback;
+			socket.emit('startChatTo',msg);
+		}
+	},
+	getUnreadChat = function(msg,callback){
+		if(cbks.getUnreadChat === undefined){
+			cbks.getUnreadChat = callback;
+			socket.emit('getUnreadChat',msg);
+		}
+	},
+	getLog = function(msg,callback){
+		if(cbks.getLog === undefined){
+			cbks.getLog = callback;
+			socket.emit('getLog',msg);
+		}
+	},
+	sayChat = function(msg,callback){
+		if(cbks.sayChat === undefined){
+			cbks.sayChat = callback;
+			console.log('now send to server ',msg);
+			socket.emit('sayChat',msg);
+		}
+	},
 	// 申請中または、申請してきているユーザーの一覧を取得
 	getManageList = function(callback){
 		if(cbks.ManageList === undefined ){
@@ -120,9 +252,19 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 	return {
 		init : init,
 		logout : logout,
+		readNotify : readNotify,
 		cancelFriend : cancelFriend,
 		approveFriend : approveFriend,
 		requestFriend : requestFriend,
+		inviteRoom : inviteRoom,
+		joinRoom : joinRoom,
+		leaveRoom : leaveRoom,
+		openRoom : openRoom,
+		cloeRoom : closeRoom,
+		startChatTo : startChatTo,
+		getUnreadChat : getUnreadChat,
+		getLog : getLog,
+		sayChat : sayChat,
 		getFriendList : getFriendList,
 		getRoomList : getRoomList,
 		getChatList : getChatList,

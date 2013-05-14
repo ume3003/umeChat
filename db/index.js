@@ -15,6 +15,22 @@ exports.init = function(url){
 	exports.Room.init(mongoose,exports.Chat);
 	exports.User.init(mongoose,exports.Chat,exports.Friend);
 };
+exports.startChatTo = function(user,tgtId,callback){
+	var roomInfo = {roomOwner:user.id,roomName:undefined,member:[user.id,tgtId],mode:0};
+	// roomを探しあったらそっち
+	exports.Room.findChat(user,tgtId,function(existRoom){
+		if(existRoom !== undefined && existRoom.length > 0){
+			callback(existRoom[0]);
+		}
+		else{
+			exports.createRoom(user,roomInfo,function(room){
+				exports.User.addRoomInfo(tgtId,{id:room.id,flag:'1',lastAccess:new Date()},function(success){
+					callback(success ? room : undefined);
+				});
+			});
+		}
+	});
+}
 // roomInfoには作成者を予め埋め込むこと
 // test済み
 exports.createRoom = function(user,roomInfo,callback){
@@ -22,9 +38,6 @@ exports.createRoom = function(user,roomInfo,callback){
 		if(newRoom !== undefined){
 			exports.User.addRoomInfo(user.id,{id:newRoom.id,flag:'1',lastAccess:new Date()},function(success){
 				callback(success ? newRoom : undefined);
-			});
-			User.update({_id:user.id},{$push:{roomInfos:{id:newRoom.id,flag:'1',lastAccess:new Date()}}},function(err2){
-				callback(!err2 ? newRoom : undefined);
 			});
 		}
 		else{
