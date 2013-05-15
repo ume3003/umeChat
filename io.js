@@ -111,22 +111,33 @@ chatObject = io.sockets.on('connection',function(socket){
 		if(rooms[roomId] === undefined){
 			rooms[roomId] = [];
 		}
+		for(var i = 0;i < rooms[roomId].length;i++){
+			if(rooms[roomId][i] === userId){
+				return;
+			}
+		}
 		rooms[roomId].push(userId);
+		
 	};
 	leaveRoom = function(roomId,userId,socket){
-		var roomInfo =  rooms[roomId],
-			idx ;
-		console.log('before slice',rooms[roomId]);
-		idx = roomInfo.indexof(userId);
-		if(idx >= 0){
-			roomInfo.slice(idx,1);
+		console.log('leaveRoom ',rooms[roomId]);
+		if(rooms[roomId] !== undefined){
+			for(var i = 0; i < rooms[roomId].length;i++){
+				if(rooms[roomId][i] === userId){
+					rooms[roomId].slice(i,1);
+					break;
+				}
+			}
 		}
-		console.log('after slice',rooms[roomId]);
+		console.log('leaveRoom ',rooms[roomId]);
 		socket.leave(room.id);
 	};
 	/*
 	 * ここから作り直し
 	 */
+	socket.on('getMyInfo',function(mes){
+		socket.emit('gotMyInfo',user);
+	});
 	/*
 	 *  通知
 	 */
@@ -205,21 +216,20 @@ chatObject = io.sockets.on('connection',function(socket){
 					if(member !== undefined){
 						for(var i = 0; i < member.length;i++){
 							// 開いていない人にはNotifyを保存
-							db.Notify.chatNotify(msg.roomId,member[i],chat.id,function(notify){							
+							db.Notify.chatNotify(msg.roomId,member[i],chat.id,chat.lastAccess,function(notify){							
 								// ログインしてるならDNを送信
 								notifyMessage('someoneSay',member[i],{roomId:msg.roomId,chatId:chat.id,notifyId:notify.id});
 							});
 						}
 					}
-					socket.emit('saidChat',{success:true});
+					socket.emit('saidChat',chat);
 				});
 			}
 			else{
-				socket.emit('saidChat',{success:false});
+				socket.emit('saidChat',undefined);
 			}
 		});
 	});
-
 	/*
 	 * msg.roomId msg.tgtUser
 	 *
@@ -302,7 +312,43 @@ chatObject = io.sockets.on('connection',function(socket){
 	});
 	socket.on('getUnreadChat',function(msg){
 		db.Notify.findUnreadChatNotify(user,msg.roomId,function(notifies){
-			socket.emit('gotUnreadChat',notifies);
+			var _notify ,
+				docs = [],
+				notifyIds = [],
+				defCnt = notifies.length > 10 ? notifies.length - 10 : 0 ;
+			// 未読をループ
+			if(notifies.length === 0){
+				socket.emit('gotUnreadChat',{notify:undefined,defCount:defCnt});
+			}
+			for(var i = 0; i < 10;i++){
+				if(i < notifies.length){
+					_notify = notifies[i];
+					// メッセージを取得
+					(function(_i,notify){
+						db.Room.getOneChat(user,msg.roomId,notify.param,function(chatObj){
+							var chat = chatObj !== undefined ?chatObj[0].chat : undefined;
+							console.log(_i,'getOneChat',chat);
+							if(chat !== undefined){
+								docs.push(chat);
+								// 既読数インクリメントしてルームへキャスト
+								db.Room.incChat(user,msg.roomId,chat._id,function(success){
+									if(success){
+										chatObject.to(msg.roomId).emit('chatRead',{chatId:chat._id});
+									}
+								});
+								db.Notify.readNotify(user,notify._id,function(success){
+									if(_i == 9 || _i == notifies.length -1){
+										// 既読
+											if(success){
+												socket.emit('gotUnreadChat',{notify:docs,defCount:defCnt});
+											}
+									}
+								});
+							}
+						});
+					})(i,_notify);
+				}
+			}
 		});
 	});
 	/*

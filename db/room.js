@@ -165,4 +165,18 @@ exports.getLog = function(user,roomId,lastAccess,count,callback){
 		callback(!err ? docs : undefined);
 	});
 }
-
+exports.incChat = function(user,roomId,chatId,callback){
+	_collection.update({'_id':roomId,'chat._id':chatId},{'$inc':{'chat.$.flag':1}},function(err){
+		callback(!err);
+	});
+}
+exports.getOneChat = function(user,roomId,chatId,callback){
+	_collection.aggregate({'$unwind':'$chat'},
+				{'$match':{'_id':_db.Types.ObjectId(  roomId  )}},
+				{'$match':{'chat._id':_db.Types.ObjectId(  chatId  )}},
+				{'$project' : {'chat':1,'_id':0}},
+			function(err,docs){
+				callback(!err ? docs : undefined);
+			}
+	);
+}

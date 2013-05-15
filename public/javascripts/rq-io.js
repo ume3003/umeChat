@@ -104,7 +104,7 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		});
 		socket.on('gotUnreadChat',function(msg){
 			if(cbks.getUnreadChat !== undefined){
-				cbks.getUnreadChat(msg);
+				cbks.getUnreadChat(msg.notify);
 				cbks.getUnreadChat = undefined;
 			}
 		});
@@ -120,6 +120,13 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 				cbks.getLog = undefined;
 			}
 		});
+		socket.on('gotMyInfo',function(msg){
+			console.log('gotmyInfo ' ,msg);
+			if(cbks.getMyInfo !== undefined){
+				cbks.getMyInfo(msg);
+				cbks.getMyInfo = undefined;
+			}
+		});
 		/*
 		socket.on('',function(msg){
 			if(cbks. !== undefined){
@@ -129,10 +136,13 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		});
 		*/
 		socket.on('directedMessage',function(msg){
-			console.log(msg);
+			console.log('directMessage',msg);
 		});
 		socket.on('someoneSaid',function(msg){
-			console.log(msg);
+			console.log('someoneSaid',msg);
+		});
+		socket.on('gotNotify',function(msg){
+			console.log('gotNotify',msg);
 		});
 	},
 	logout = function(){
@@ -141,6 +151,12 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 	getSocket = function(){
 		return socket;
 	},
+	getMyInfo = function(callback){
+		if(cbks.getMyInfo === undefined){
+			cbks.getMyInfo = callback;
+			socket.emit('getMyInfo',undefined);
+		}
+	}
 	readNotify = function(notifyIds,callback){
 		if(cbks.readNotify === undefined){
 			cbks.readNotify = callback;
@@ -251,6 +267,7 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 	};
 	return {
 		init : init,
+		getMyInfo : getMyInfo,
 		logout : logout,
 		readNotify : readNotify,
 		cancelFriend : cancelFriend,

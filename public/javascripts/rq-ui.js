@@ -15,12 +15,13 @@ require.config({
 });
 define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],function(ioc,uiparts,$){
 	var
+		user = undefined,
 		i,
 		tabIndex = -1,
 		currentRoom = undefined,
 		$tabItem,
 		$scroll  = {},					// スクロール用のオブジェクト
-		$tabBase	= [$('#friendBase'),$('#roomBase'),$('chatBase'),$('#manageBase')],
+		$tabBase	= [$('#friendBase'),$('#roomBase'),$('#chatBase'),$('#manageBase')],
 		$baseHead 	= $('#baseheads'),	// 通常のヘッダーオブジェクト
 		$chatHead	= $('#chatheads'),	// チャットページ用のヘッダーオブジェクト
 	$chatBox		= $('#chatBox'),
@@ -76,6 +77,10 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		for(i = 0;i < 4;i++){
 			$scroll[i] = $tabBase[i].append('<div/>').find(':last');
 		}
+		ioc.getMyInfo(function(_user){
+			user = _user;
+			console.log(user);
+		});
 		getList(0,true);
 		getList(1,false);
 		console.log('getList 3');
@@ -92,6 +97,11 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 					if(val.length > 0){
 						console.log('say:' + $(this).val());
 						ioc.sayChat({roomId:currentRoom,msg:val},function(msg){
+							if(msg !== undefined){
+								var cnt = $chatItems[currentRoom].length;
+								$chatItems[currentRoom][cnt] = setChat(cnt,msg);
+								$scroll[2].scrollToY($chatItems[currentRoom][cnt].get(0));
+							}
 							console.log('receive myself',msg);
 						});
 						$(this).val("");
@@ -125,8 +135,9 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			$roomName = $('#roomName'),
 			$roomCnt  = $('#roomCnt');
 		// 最終的にはいろいろキャッシュ。とりあえず、現状は取得	
-		console.log(roomInfo);
+		console.log('makeChatPage',roomInfo);
 		currentRoom = roomInfo._id;
+		$chatItems[currentRoom] = [];
 		if(roomInfo.mode == 0){	//  個人チャットモード
 			$roomPict.css('background-image','url(' + tgtInfo.photo + ')');
 			$roomName.text(tgtInfo.displayName);
@@ -136,18 +147,30 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			$roomName.text(roomInfo.member.join(','));
 			$roomCnt.text(roomInfo.member.length);
 		}
+		// 現在のチャットを消す
+		var scroll2 = $scroll[2].get(0);
+		while(scroll2.hasChildNodes()){
+			scroll2.removeChild(scroll2.firstChild);
+		}
 		// 最新のチャットを取ってくる。
 		ioc.getUnreadChat({roomId:roomInfo._id},function(articles){
-			var chatCnt = articles.length,
-			lastAcc = chatCnt === 0 ? new Date() : articles[length -1].notifyTime;
+			var i,
+				chatCnt = articles === undefined ? 0 : articles.length,
+			lastAcc = undefined;
 			// 未読から
-			console.log('article',articles);
+			console.log('未読 ',chatCnt);
+			lastAcc = chatCnt === 0 ? new Date() : articles[0].lastAccess;
 			// 未読＋既読１０行分
+			for(i = 0;i < chatCnt;i++){
+				$chatItems[currentRoom][i] = setChat(i,articles[i]);
+				console.log(articles[i]);
+			}
 			console.log('last time ' ,lastAcc);
 			if(chatCnt < 10){
 				ioc.getLog({roomId:roomInfo._id,lastAccess:lastAcc,count:10 - chatCnt},function(logs){
 					if(logs !== undefined){
-						for(var i = 0 ; i < logs.length;i++){
+						for(i = 0 ; i < logs.length;i++){
+							$chatItems[currentRoom][i+chatCnt] = setChat(i+chatCnt,logs[i].chat);
 							console.log(logs[i]);
 						}
 					}
@@ -202,20 +225,21 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		var $listItem = createItem(2,undefined,'listDock'),
 			$msgItem,
 			height = 14;
-		if(chat.flag === '0'){
-			$listItem.append('<div/>').find(':last').addClass('textS cmName').text(chat.name);
+		console.log(chat.sayid,' ',user._id,' ',user.id);
+		if(chat.sayid !== user.id){
+			$listItem.append('<div/>').find(':last').addClass('textS cmName').text(chat.sayid);
 			$listItem.append('<div/>').find(':last').addClass('listPhoto photoS').css('background-image','url(' + chat.pict + ')');
-			$listItem.append('<div/>').find(':last').addClass('textS cmTime').text(chat.sayTime);
+			$listItem.append('<div/>').find(':last').addClass('textS cmTime').text(chat.lastAccess);
 
 			$msgItem = $listItem.append('<div/>').find(':last').corner();
-			$msgItem.addClass('textC cmMsg').text(chat.msg);
+			$msgItem.addClass('textC cmMsg').text(chat.body);
 			height = $msgItem.get(0).clientHeight;
 			$listItem.css('height', (27 + height ) + 'px');
 		}
 		else{
-			$listItem.append('<div/>').find(':last').addClass('textS cmTimeMe').text(chat.sayTime);
+			$listItem.append('<div/>').find(':last').addClass('textS cmTimeMe').text(chat.lastAccess);
 			$msgItem = $listItem.append('<div/>').find(':last').corner();
-			$msgItem.addClass('textC cmMsgMe').text(chat.msg);
+			$msgItem.addClass('textC cmMsgMe').text(chat.body);
 			height = $msgItem.get(0).clientHeight;
 			$listItem.css('height', (9 + height ) + 'px');
 		}
@@ -288,7 +312,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				setRoom(i,doc);
 				break;
 			case 2:
-				setChat(i,doc);
+				$chatItems[currentRoom][i] = setChat(i,doc);
 				break;
 			case 3:
 				$manageItems[i] = setManage(i,doc);

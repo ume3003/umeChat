@@ -6,7 +6,8 @@
 	// 4.Chat	say			roomId		reciever	room.chatId						
 	// 
 
-var _collection;
+var _collection,
+	_db;
 
 exports.collection = function(){
 	return _collection;
@@ -21,43 +22,45 @@ exports.init = function(db){
 		notifyTime		: {type:Date,default:Date.now}
 	});
 	_collection = db.model('Notify',NotifySchema);
+	_db = db;
 }
 exports.requestNotify = function(requesterId,approverId,callback){
-	exports.notifyMessage(requesterId,approverId,0,undefined,function(notify){
+	exports.notifyMessage(requesterId,approverId,0,undefined,undefined,function(notify){
 		callback(notify);	
 	});
 }
 exports.approveNotify = function(approverId,requesterId,callback){
-	exports.notifyMessage(approverId,requesterId,1,undefined,function(notify){
+	exports.notifyMessage(approverId,requesterId,1,undefined,undefined,function(notify){
 		callback(notify);	
 	});
 }
 exports.inviteNotify = function(inviterId,joinnerId,roomId,callback){
-	exports.notifyMessage(inviterId,joinnerId,2,roomId,function(notify){
+	exports.notifyMessage(inviterId,joinnerId,2,roomId,undefined,function(notify){
 		callback(notify);	
 	});
 }
 exports.joinNotify = function(joinnerId,inviterId,roomId,callback){
-	exports.notifyMessage(joinnerId,inviterId,3,roomId,function(notify){
+	exports.notifyMessage(joinnerId,inviterId,3,roomId,undefined,function(notify){
 		callback(notify);	
+			lastAcc = chatCnt === 0 ? new Date() : articles[length -1].notifyTime;
 	});
 }
-exports.chatNotify = function(roomId,receiverId,chatId,callback){
-	exports.notifyMessage(roomId,receiverId,4,chatId,function(notify){
+exports.chatNotify = function(roomId,receiverId,chatId,notifyTime,callback){
+	exports.notifyMessage(roomId,receiverId,4,chatId,notifyTime,function(notify){
 		callback(notify);	
 	});
 }
 /*
  * 通知を発行する
  */
-exports.notifyMessage = function(from,to,type,param,callback){
+exports.notifyMessage = function(from,to,type,param,notifyTime,callback){
 	var newNotify = new _collection();
 	newNotify.from_id = from;
 	newNotify.to_id = to;
 	newNotify.type = type;
 	newNotify.read = false;
 	newNotify.param = param;
-	newNotify.notifyTime = new Date();
+	newNotify.notifyTime = (notifyTime === undefined ? new Date() : notifyTime);
 	newNotify.save(function(err){
 		callback(!err ? newNotify : undefined);
 	});
@@ -71,6 +74,7 @@ exports.findMyNotify = function(me,callback){
 	});
 }
 exports.findUnreadChatNotify = function(me,roomId,callback){
+	console.log('findUnreadChatNotify ' ,{to_id:me.id,read:false,type:4,from_id:roomId});
 	_collection.find({to_id:me.id,read:false,type:4,from_id:roomId},{from_id:1,type:2,param:3,notifyTime:4},function(err,notifies){
 		callback(notifies);
 	});
@@ -80,7 +84,8 @@ exports.findUnreadChatNotify = function(me,roomId,callback){
  *	通知IDを配列で渡すこと
  */
 exports.readNotify = function(me,readArticle,callback){
-	_collection.update({to_id:me.id,param:{$in:readArticle}},{read:true},function(err){
+	console.log('readNotify ',readArticle);
+	_collection.update({to_id:me.id,_id:readArticle},{$set:{read:true}},function(err){
 		callback(!err);
 	});
 }
