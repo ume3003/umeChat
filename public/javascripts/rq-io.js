@@ -134,6 +134,12 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		socket.on('sayNotify',function(msg){
 			console.log('sayNotify',msg);
 		});
+		socket.on('gotRoomList',function(msg){
+			if(cbks.getRoomList !== undefined){
+				cbks.getRoomList(msg);
+				cbks.getRoomList = undefined;
+			}
+		});
 		/*
 		socket.on('',function(msg){
 			if(cbks. !== undefined){
@@ -176,17 +182,20 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 	},
 	// TODO:作成
 	getRoomList = function(callback){
+		if(cbks.getRoomList === undefined ){
+			cbks.getRoomList = callback;
+			socket.emit('getRoomList');
+		}
+
+		/*
 		var list = [
 			{'id':'001','name':'上野の部屋','cnt':2,'lastChat':'マッカラン','lastTime':'16:00','pict':'/images/macallan.jpg'},
 			{'id':'002','name':'上野　彰三','cnt':5,'lastChat':'マッカラン','lastTime':'昨日','pict':'/images/macallan.jpg'}
 			];
 		callback(list);
+		*/
 	},
 	// TODO:作成
-	getChatList = function(callback){
-		var list = [];
-		callback(list);
-	},
 	approveFriend = function(manage,callback){
 		if(cbks.approveFriend === undefined){
 			cbks.approveFriend = callback;
@@ -285,14 +294,13 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		joinRoom : joinRoom,
 		leaveRoom : leaveRoom,
 		openRoom : openRoom,
-		cloeRoom : closeRoom,
+		closeRoom : closeRoom,
 		startChatTo : startChatTo,
 		getUnreadChat : getUnreadChat,
 		getLog : getLog,
 		sayChat : sayChat,
 		getFriendList : getFriendList,
 		getRoomList : getRoomList,
-		getChatList : getChatList,
 		getManageList : getManageList,
 		getSocket : getSocket
 	};

@@ -130,7 +130,7 @@ chatObject = io.sockets.on('connection',function(socket){
 			}
 		}
 		console.log('leaveRoom ',rooms[roomId]);
-		socket.leave(room.id);
+		socket.leave(roomId);
 	};
 	/*
 	 * ここから作り直し
@@ -307,6 +307,11 @@ chatObject = io.sockets.on('connection',function(socket){
 				enterRoom(room.id,user.id,socket);
 			}
 			socket.emit('CreatedRoom',{room:room});
+		});
+	});
+	socket.on('getRoomList',function(msg){
+		db.Room.getJoinRoomList(user,function(rooms){
+			socket.emit('gotRoomList',rooms);
 		});
 	});
 	socket.on('getLog',function(msg){

@@ -7,7 +7,8 @@ var _collection,
 		roomName :2,
 		member :3,
 		created:4,
-		lastAccess:5
+		lastAccess:5,
+		mode:6
 	};
 
 exports.collection = function(){
@@ -33,7 +34,7 @@ exports.init = function(db,chat){
  * roomデータから入室しているルーム情報をとる。Idとname
  */
 exports.getJoinRoomList = function(user,callback){
-	_collection.find({member:user.id},function(err,rooms){
+	_collection.find({member:user.id},roomFieldS,function(err,rooms){
 		callback(!err ? rooms : undefined);
 	});
 }
@@ -45,12 +46,12 @@ exports.findChat = function(user,tgtId,callback){
 }
 exports.findRoomShort = function(roomId,callback){
 	_collection.find({_id : roomId},roomFieldS,function(err,docs){
-		callback(docs.length > 0 ? docs[0] : undefined);
+		callback(!err ? (docs.length > 0 ? docs[0] : undefined) : undefined);
 	});
 }
 exports.findRoom = function(roomId,callback){
 	_collection.find({_id : roomId},function(err,docs){
-		callback(docs.length > 0 ? docs[0] : undefined);
+		callback(!err ? (docs.length > 0 ? docs[0] : undefined) : undefined);
 	});
 }
 

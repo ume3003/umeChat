@@ -19,6 +19,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		i,
 		tabIndex = -1,
 		currentRoom = undefined,
+		friendInfo = {},
 		$tabItem,
 		$scroll  = {},					// スクロール用のオブジェクト
 		$tabBase	= [$('#friendBase'),$('#roomBase'),$('#chatBase'),$('#manageBase')],
@@ -93,9 +94,6 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			console.log(user);
 		});
 		getList(0,true);
-		getList(1,false);
-		console.log('getList 3');
-		getList(3,false);
 		$baseHead.show();
 		
 		prepareAddFriendbox();
@@ -108,13 +106,6 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 					if(val.length > 0){
 						console.log('say:' + $(this).val());
 						ioc.sayChat({roomId:currentRoom,msg:val},function(msg){
-							/*
-							if(msg !== undefined){
-								var cnt = $chatItems[currentRoom].length;
-								$chatItems[currentRoom][cnt] = setChat(cnt,msg);
-								$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
-							}
-							*/
 							console.log('receive myself',msg);
 						});
 						$(this).val("");
@@ -195,7 +186,8 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	},
 	setFriend = function(i,doc){
 		var $listItem = createItem(0,'52px','listDocBox');
-		console.log(doc);
+		friendInfo[doc._id] = doc;
+		console.log(doc._id,' in ',friendInfo[doc._id].displayName);
 		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + doc.photo + ')');
 		$listItem.append('<div/>').find(':last').addClass('textM flName').text(doc.displayName);
 		$listItem.append('<div/>').find(':last').addClass('textS flComm textEllipsis').text(doc.lastComment);
@@ -219,11 +211,22 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		return $listItem;
 	},
 	setRoom = function(i,room){
-		var $listItem = createItem(1,'52px','listDocBox');
-		$listItem.append('<div/>').find(':last').addClass('textM rmName').text(room.name + ' ' + room.cnt);
-		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + room.pict + ')');
-		$listItem.append('<div/>').find(':last').addClass('textS rmTime').text(room.lastTime);
-		$listItem.append('<div/>').find(':last').addClass('textS rmComm textEllipsis').text(room.lastChat);
+		var $listItem = createItem(1,'52px','listDocBox'),
+			userId,
+			roomURL,
+			roomName = room.name;;
+		console.log(room);
+		if(room.mode === 0){
+			userId = room.member[0] !== user.id ? room.member[0] : room.member[1];
+			console.log(userId,friendInfo[userId]);
+			roomName = friendInfo[userId].displayName;
+			roomURL = friendInfo[userId].photo;
+		}
+
+		$listItem.append('<div/>').find(':last').addClass('textM rmName').text(roomName + ' ' + room.member.length);
+		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + roomURL  + ')');
+		$listItem.append('<div/>').find(':last').addClass('textS rmTime').text(toChatTime(room.lastAccess));
+		$listItem.append('<div/>').find(':last').addClass('textS rmComm textEllipsis').text(room.roomOwner);
 		(function(arg){
 			$listItem.click(function(){
 				// TODO:ここはメニュー
@@ -324,7 +327,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				$friendItems[i] = setFriend(i,doc);
 				break;
 			case 1:
-				setRoom(i,doc);
+				$roomItems[i] = setRoom(i,doc);
 				break;
 			case 2:
 				$chatItems[currentRoom][i] = setChat(i,doc);
@@ -352,17 +355,16 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			case 0:
 				ioc.getFriendList(function(list){
 					createList(arg,list,bShow);
+					getList(1,false);
 				});
 				break;
 			case 1:
 				ioc.getRoomList(function(list){
 					createList(arg,list,bShow);
+					getList(3,false);
 				});
 				break;
-			case 2:
-				ioc.getChatList(function(list){
-					createList(arg,list,bShow);
-				});
+			case 2:		// チャットは開くときに都度とる
 				break;
 			case 3:
 				ioc.getManageList(function(list){
@@ -398,6 +400,8 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				case 2:
 					$chatHead.hide();
 					$chatBox.hide();
+					ioc.closeRoom({roomId:currentRoom});
+					currentRoom = -1;
 					break;
 				case 3:
 					$baseHead.hide();
