@@ -211,15 +211,19 @@ chatObject = io.sockets.on('connection',function(socket){
 			if(chat !== undefined){
 				// ルームを開いているメンバーに直接送信
 				console.log('say ',rooms[msg.roomId]);
-				chatObject.to(msg.roomId).emit('someoneSaid',{uID:user.id,msg : msg.msg,roomId:msg.roomId});
+				chatObject.to(msg.roomId).emit('someoneSaid',chat);
 				db.Room.getLeftRoomMember(msg.roomId,rooms[msg.roomId],function(member){
+					console.log('leftmember ',member);
 					if(member !== undefined){
 						for(var i = 0; i < member.length;i++){
 							// 開いていない人にはNotifyを保存
-							db.Notify.chatNotify(msg.roomId,member[i],chat.id,chat.lastAccess,function(notify){							
-								// ログインしてるならDNを送信
-								notifyMessage('someoneSay',member[i],{roomId:msg.roomId,chatId:chat.id,notifyId:notify.id});
-							});
+							(function(_i){
+								db.Notify.chatNotify(msg.roomId,member[_i],chat.id,chat.lastAccess,function(notify){							
+									console.log('chatNotify',_i);
+									// ログインしてるならDNを送信
+									notifyMessage('sayNotify',member[_i],{roomId:msg.roomId,chatId:chat.id,notifyId:notify.id});
+								});
+							})(i);
 						}
 					}
 					socket.emit('saidChat',chat);

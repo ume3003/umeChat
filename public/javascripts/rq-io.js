@@ -127,6 +127,13 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 				cbks.getMyInfo = undefined;
 			}
 		});
+		socket.on('someoneSaid',function(msg){
+			cbks.saidChat(msg);
+			console.log('someoneSaid',msg);
+		});
+		socket.on('sayNotify',function(msg){
+			console.log('sayNotify',msg);
+		});
 		/*
 		socket.on('',function(msg){
 			if(cbks. !== undefined){
@@ -137,9 +144,6 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		*/
 		socket.on('directedMessage',function(msg){
 			console.log('directMessage',msg);
-		});
-		socket.on('someoneSaid',function(msg){
-			console.log('someoneSaid',msg);
 		});
 		socket.on('gotNotify',function(msg){
 			console.log('gotNotify',msg);
@@ -265,8 +269,12 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			socket.emit('getInviteList');
 		}
 	};
+	saidChat = function(callback){
+		cbks.saidChat = callback;
+	};
 	return {
 		init : init,
+		saidChat : saidChat,
 		getMyInfo : getMyInfo,
 		logout : logout,
 		readNotify : readNotify,

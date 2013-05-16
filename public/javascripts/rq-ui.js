@@ -35,6 +35,11 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	$roomItems = [],				// チャットルームリストページのルームアイテムオブジェクト
 	$chatItems = [],
 	$manageItems = [],
+	someoneSaid = function(msg){
+		var cnt = $chatItems[currentRoom].length;
+		$chatItems[currentRoom][cnt] = setChat(cnt,msg);
+		$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
+	},
 	prepareAddFriendbox = function(){
 		$manageBtn.click(function(){
 			var addFriend = $manageInput.val();
@@ -66,8 +71,14 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			}
 		});
 	},
+	toChatTime = function(dateString){
+		var d = new Date(dateString);
+			dString = d.getHours() +  ':' + d.getMinutes();		
+		return dString;
+	},
 	init = function(){
 		console.log('init');
+		ioc.saidChat(someoneSaid);
 		$tabItem = [$('#friendTab').corner(),$('#roomTab').corner(),$('#chatTab').corner(),$('#manageTab').corner()];
 		for(i = 0;i < 4;i++){		// タブ切り替え
 			(function(arg){
@@ -97,11 +108,13 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 					if(val.length > 0){
 						console.log('say:' + $(this).val());
 						ioc.sayChat({roomId:currentRoom,msg:val},function(msg){
+							/*
 							if(msg !== undefined){
 								var cnt = $chatItems[currentRoom].length;
 								$chatItems[currentRoom][cnt] = setChat(cnt,msg);
-								$scroll[2].scrollToY($chatItems[currentRoom][cnt].get(0));
+								$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
 							}
+							*/
 							console.log('receive myself',msg);
 						});
 						$(this).val("");
@@ -165,6 +178,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				$chatItems[currentRoom][i] = setChat(i,articles[i]);
 				console.log(articles[i]);
 			}
+			$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
 			console.log('last time ' ,lastAcc);
 			if(chatCnt < 10){
 				ioc.getLog({roomId:roomInfo._id,lastAccess:lastAcc,count:10 - chatCnt},function(logs){
@@ -172,6 +186,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 						for(i = 0 ; i < logs.length;i++){
 							$chatItems[currentRoom][i+chatCnt] = setChat(i+chatCnt,logs[i].chat);
 							console.log(logs[i]);
+							$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
 						}
 					}
 				});
@@ -229,7 +244,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		if(chat.sayid !== user.id){
 			$listItem.append('<div/>').find(':last').addClass('textS cmName').text(chat.sayid);
 			$listItem.append('<div/>').find(':last').addClass('listPhoto photoS').css('background-image','url(' + chat.pict + ')');
-			$listItem.append('<div/>').find(':last').addClass('textS cmTime').text(chat.lastAccess);
+			$listItem.append('<div/>').find(':last').addClass('textS cmTime').text(toChatTime(chat.lastAccess));
 
 			$msgItem = $listItem.append('<div/>').find(':last').corner();
 			$msgItem.addClass('textC cmMsg').text(chat.body);
@@ -237,7 +252,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			$listItem.css('height', (27 + height ) + 'px');
 		}
 		else{
-			$listItem.append('<div/>').find(':last').addClass('textS cmTimeMe').text(chat.lastAccess);
+			$listItem.append('<div/>').find(':last').addClass('textS cmTimeMe').text(toChatTime(chat.lastAccess));
 			$msgItem = $listItem.append('<div/>').find(':last').corner();
 			$msgItem.addClass('textC cmMsgMe').text(chat.body);
 			height = $msgItem.get(0).clientHeight;
