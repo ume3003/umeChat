@@ -36,10 +36,27 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	$roomItems = [],				// チャットルームリストページのルームアイテムオブジェクト
 	$chatItems = [],
 	$manageItems = [],
+	// TODO:通知の処理
+	sayNotify = function(msg){
+		console.log(msg);
+	},
+	// TODO:通知の処理
+	gotNotifies = function(msg){
+		var i,mx;
+		if(msg !== undefined){
+			for(i = 0,mx = msg.length;i < mx;i++){
+				console.log(msg[i]);
+			}
+		}
+	},
 	someoneSaid = function(msg){
 		var cnt = $chatItems[currentRoom].length;
 		$chatItems[currentRoom][cnt] = setChat(cnt,msg);
 		$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
+	},
+	disconnection = function(msg){
+		console.log(msg);
+		window.location.reload();
 	},
 	prepareAddFriendbox = function(){
 		$manageBtn.click(function(){
@@ -79,7 +96,12 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	},
 	init = function(){
 		console.log('init');
-		ioc.saidChat(someoneSaid);
+		// サーバからの通知のコールバック登録
+		ioc.someoneSay(someoneSaid);
+		ioc.disconnection(disconnection);
+		ioc.gotNotifies(gotNotifies);
+		ioc.sayNotify(sayNotify);
+
 		$tabItem = [$('#friendTab').corner(),$('#roomTab').corner(),$('#chatTab').corner(),$('#manageTab').corner()];
 		for(i = 0;i < 4;i++){		// タブ切り替え
 			(function(arg){
@@ -91,11 +113,9 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		}
 		ioc.getMyInfo(function(_user){
 			user = _user;
-			console.log(user);
 		});
 		getList(0,true);
 		$baseHead.show();
-		
 		prepareAddFriendbox();
 		$chatEntry.keypress(function(event){
 			var $area = $(this),
@@ -137,18 +157,28 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	makeChatPage = function(roomInfo,tgtInfo){
 		var $roomPict = $('#roomPict'),
 			$roomName = $('#roomName'),
-			$roomCnt  = $('#roomCnt');
+			$roomCnt  = $('#roomCnt'),
+			nameText = [],
+			i;
 		// 最終的にはいろいろキャッシュ。とりあえず、現状は取得	
-		console.log('makeChatPage',roomInfo);
 		currentRoom = roomInfo._id;
 		$chatItems[currentRoom] = [];
+		// TODO:名前を配列にいれるか、メソッドで取得できるようにする。
 		if(roomInfo.mode == 0){	//  個人チャットモード
 			$roomPict.css('background-image','url(' + tgtInfo.photo + ')');
 			$roomName.text(tgtInfo.displayName);
 			$roomCnt.text('2');
 		}
 		else{
-			$roomName.text(roomInfo.member.join(','));
+			for(i = 0;i < roomInfo.member.length;i++){
+				if(friendInfo[roomInfo.member[i]]) !== undefined){
+					nameText.push(friendInfo[roomInfo.member[i].displayName]);
+				}
+				else{
+					nameText.push('unknown');
+				}
+			}
+			$roomName.text(nameText.join(','));
 			$roomCnt.text(roomInfo.member.length);
 		}
 		// 現在のチャットを消す
@@ -160,23 +190,20 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		ioc.getUnreadChat({roomId:roomInfo._id},function(articles){
 			var i,
 				chatCnt = articles === undefined ? 0 : articles.length,
-			lastAcc = undefined;
+				lastAcc = undefined;
 			// 未読から
 			console.log('未読 ',chatCnt);
 			lastAcc = chatCnt === 0 ? new Date() : articles[0].lastAccess;
 			// 未読＋既読１０行分
 			for(i = 0;i < chatCnt;i++){
 				$chatItems[currentRoom][i] = setChat(i,articles[i]);
-				console.log(articles[i]);
 			}
 			$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
-			console.log('last time ' ,lastAcc);
 			if(chatCnt < 10){
 				ioc.getLog({roomId:roomInfo._id,lastAccess:lastAcc,count:10 - chatCnt},function(logs){
 					if(logs !== undefined){
 						for(i = 0 ; i < logs.length;i++){
 							$chatItems[currentRoom][i+chatCnt] = setChat(i+chatCnt,logs[i].chat);
-							console.log(logs[i]);
 							$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
 						}
 					}
@@ -215,7 +242,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			userId,
 			roomURL,
 			roomName = room.name;;
-		console.log(room);
+
 		if(room.mode === 0){
 			userId = room.member[0] !== user.id ? room.member[0] : room.member[1];
 			console.log(userId,friendInfo[userId]);

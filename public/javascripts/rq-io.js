@@ -19,27 +19,35 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 	init = function(param){
 		console.log('connect to server');
 		socket = io.connect();
-		// サーバから切断された場合。
-		// TODO:ウィンドウを再読み込みしてトップに移動してるけど、ui側でやりたい
+		/*
+		 *
+		 *
+		 * サーバからの受信コールバック
+		 */
+		// サーバからの切断地のUIへのコールバック
 		socket.on('disconnect',function(msg){
-			console.log('disconnect');
-			window.location.reload();
+			if(cbks.disconnection !== undefined){
+				cbks.disconnection(msg);
+			}
 		});
-		// サーバから帰ってきた申請者、申請中リストをコールバックへ
+		socket.on('someoneSaid',function(msg){
+			cbks.someoneSay(msg);
+		});
+		// 申請中リスト取得のコールバック
 		socket.on('gotInviteList',function(msg){
 			if(cbks.ManageList !== undefined){
 				cbks.ManageList(msg.invite);
 				cbks.ManageList = undefined;
 			}
 		});
-		// サーバから帰ってきたフレンドリストをコールバックへ
+		// フレンドリスト取得のコールバック
 		socket.on('gotFriendList',function(msg){
 			if(cbks.getFriendList !== undefined){
 				cbks.getFriendList(msg.friends);
 				cbks.getFriendList = undefined;
 			}
 		});
-		// 検索したユーザーがいたかの返答
+		// フレンド申請のコールバック
 		socket.on('requestedFriend',function(msg){
 			if(cbks.requestFriend[msg.tgt] !== undefined){
 				cbks.requestFriend[msg.tgt](msg.you);
@@ -53,87 +61,103 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 				cbks.approveFriend = undefined;
 			}
 		});
+		// フレンド解消のコールバック
 		socket.on('cancelledFriend',function(msg){
 			if(cbks.cancelFriend !== undefined){
 				cbks.cancelFriend(msg.success);
 				cbks.cancelFriend = undefined;
 			}
 		});
+		// 通知を読んだコールバック
 		socket.on('redNotify',function(msg){
 			if(cbks.readNotify !== undefined){
 				cbks.readNotify(msg);
 				cbks.readNotify = undefined;
 			}
-			console.log(msg);
 		});
+		//チャットに永続的に入室したコールバック
 		socket.on('joinedRoom',function(msg){
 			if(cbks.joinRoom !== undefined){
 				cbks.joinRoom(msg);
 				cbks.joinRoom = undefined;
 			}
 		});
+		//  チャットから永続的に退室したコールバック
 		socket.on('leftRoom',function(msg){
 			if(cbks.leftRoom !== undefined){
 				cbks.leftRoom(msg);
 				cbks.leftRoom = undefined;
 			}
 		});
+		// チャットを開いたコールバック
 		socket.on('openedRoom',function(msg){
 			if(cbks.openRoom !== undefined){
 				cbks.openRoom(msg);
 				cbks.openRoom = undefined;
 			}
 		});
+		// チャットを閉じたコールバック
 		socket.on('closedRoom',function(msg){
 			if(cbks.closeRoom !== undefined){
 				cbks.closeRoom(msg);
 				cbks.closeRoom = undefined;
 			}
 		});
+		// チャットルーム作成のコールバック
 		socket.on('createdRoom',function(msg){
 			if(cbks.createRoom !== undefined){
 				cbks.createRoom(msg);
 				cbks.createRoom = undefined;
 			}
 		});
+		// １対１チャット開始のコールバック
 		socket.on('startedChatTo',function(msg){
 			if(cbks.startChatTo !== undefined){
 				cbks.startChatTo(msg);
 				cbks.startChatTo = undefined;
 			}
 		});
+		// 未読チャットの取得のコールバック
 		socket.on('gotUnreadChat',function(msg){
 			if(cbks.getUnreadChat !== undefined){
 				cbks.getUnreadChat(msg.notify);
 				cbks.getUnreadChat = undefined;
 			}
 		});
+		// チャットの発言のコールバック
 		socket.on('saidChat',function(msg){
 			if(cbks.sayChat !== undefined){
 				cbks.sayChat(msg);
 				cbks.sayChat = undefined;
 			}
 		});
+		// 既読ログの取得のコールバック
 		socket.on('gotLog',function(msg){
 			if(cbks.getLog !== undefined){
 				cbks.getLog(msg);
 				cbks.getLog = undefined;
 			}
 		});
+		// 自分の情報を取得したコールバック
 		socket.on('gotMyInfo',function(msg){
-			console.log('gotmyInfo ' ,msg);
 			if(cbks.getMyInfo !== undefined){
 				cbks.getMyInfo(msg);
 				cbks.getMyInfo = undefined;
 			}
 		});
-		socket.on('someoneSaid',function(msg){
-			cbks.saidChat(msg);
-			console.log('someoneSaid',msg);
-		});
+		// だれかの発言の通知（チャットルームを開いていない）
 		socket.on('sayNotify',function(msg){
-			console.log('sayNotify',msg);
+			if(cbks.sayNotify !== undefined){
+				cbks.sayNotify(msg);
+			}
 		});
+		// 未ログインのときの通知の取得
+		socket.on('gotNotifies',function(msg){
+			if(cbks.gotNotifies !== undefined){
+				cbks.gotNotifies(msg);
+			}
+		});
+		// ルームリストの取得のコールバック
 		socket.on('gotRoomList',function(msg){
 			if(cbks.getRoomList !== undefined){
 				cbks.getRoomList(msg);
@@ -148,12 +172,6 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			}
 		});
 		*/
-		socket.on('directedMessage',function(msg){
-			console.log('directMessage',msg);
-		});
-		socket.on('gotNotify',function(msg){
-			console.log('gotNotify',msg);
-		});
 	},
 	logout = function(){
 		socket.emit('disconnect');
@@ -161,12 +179,18 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 	getSocket = function(){
 		return socket;
 	},
+	/*
+	 *	サーバへの送信メソッド
+	 *
+	 */
+	// サーバから自分の情報を取得する
 	getMyInfo = function(callback){
 		if(cbks.getMyInfo === undefined){
 			cbks.getMyInfo = callback;
 			socket.emit('getMyInfo',undefined);
 		}
 	}
+	// 通知を読んだことをサーバに送信
 	readNotify = function(notifyIds,callback){
 		if(cbks.readNotify === undefined){
 			cbks.readNotify = callback;
@@ -180,28 +204,21 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			socket.emit('getFriendList');
 		}
 	},
-	// TODO:作成
+	// チャットルームのリスト表示
 	getRoomList = function(callback){
 		if(cbks.getRoomList === undefined ){
 			cbks.getRoomList = callback;
 			socket.emit('getRoomList');
 		}
-
-		/*
-		var list = [
-			{'id':'001','name':'上野の部屋','cnt':2,'lastChat':'マッカラン','lastTime':'16:00','pict':'/images/macallan.jpg'},
-			{'id':'002','name':'上野　彰三','cnt':5,'lastChat':'マッカラン','lastTime':'昨日','pict':'/images/macallan.jpg'}
-			];
-		callback(list);
-		*/
 	},
-	// TODO:作成
+	//　友人承認
 	approveFriend = function(manage,callback){
 		if(cbks.approveFriend === undefined){
 			cbks.approveFriend = callback;
 			socket.emit('approveFriend',{info:manage});
 		}
 	},
+	// 友人解除
 	cancelFriend = function(manage,callback){
 		if(cbks.cancelFriend === undefined){
 			cbks.cancelFriend = callback;
@@ -216,54 +233,63 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			socket.emit('requestFriend',{'tgt':findString});
 		}
 	},
+	// チャットルームへの招待
 	inviteRoom = function(msg,callback){
 		if(cbks.inviteRoom === undefined){
 			cbks.inviteRoom = callback;
 			socket.emit('inviteRoom',msg);
 		}
 	},
+	// チャットルームへの永続的ログイン
 	joinRoom = function(msg,callback){
 		if(cbks.joinRoom === undefined){
 			cbks.joinRoom = callback;
 			socket.emit('joinRoom',msg);
 		}
 	},
+	// チャットルームからの永続的ログアウト
 	leaveRoom = function(msg,callback){
 		if(cbks.leaveRoom === undefined){
 			cbks.leaveRoom = callback;
 			socket.emit('leaveRoom',msg);
 		}
 	},
+	//チャットルームへの入室
 	openRoom = function(msg,callback){
 		if(cbks.openRoom === undefined){
 			cbks.openRoom = callback;
 			socket.emit('openRoom',msg);
 		}
 	},
+	// チャットルームからの退室
 	closeRoom = function(msg,callback){
 		if(cbks.closeRoom === undefined){
 			cbks.closeRoom = callback;
 			socket.emit('closeRoom',msg);
 		}
 	},
+	// １対１チャットの開始
 	startChatTo = function(msg,callback){
 		if(cbks.startChatTo === undefined){
 			cbks.startChatTo = callback;
 			socket.emit('startChatTo',msg);
 		}
 	},
+	// 未読チャットの取得
 	getUnreadChat = function(msg,callback){
 		if(cbks.getUnreadChat === undefined){
 			cbks.getUnreadChat = callback;
 			socket.emit('getUnreadChat',msg);
 		}
 	},
+	// 既読チャットの取得
 	getLog = function(msg,callback){
 		if(cbks.getLog === undefined){
 			cbks.getLog = callback;
 			socket.emit('getLog',msg);
 		}
 	},
+	// チャットの発言
 	sayChat = function(msg,callback){
 		if(cbks.sayChat === undefined){
 			cbks.sayChat = callback;
@@ -278,12 +304,29 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			socket.emit('getInviteList');
 		}
 	};
-	saidChat = function(callback){
-		cbks.saidChat = callback;
+	// 通知の取得のコールバックの登録
+	sayNotify = function(callback){
+		cbks.sayNotify = callback;
+	};
+	// 未ログイン時の通知取得のコールバックの登録
+	gotNotifies = function(callback){
+		cbks.gotNotifies = callback;
+	};
+	// チャットの取得コールバックの登録
+	someoneSay = function(callback){
+		cbks.sameoneSay = callback;
+	};
+	// 切断処理のコールバックの登録
+	disconnection = function(callback){
+		cbks.disconnection = callback;
 	};
 	return {
 		init : init,
-		saidChat : saidChat,
+		someoneSay : someoneSay,
+		disconnection : disconnection,
+		sayNotify : sayNotify,
+		gotNotifies : gotNotifies,
+
 		getMyInfo : getMyInfo,
 		logout : logout,
 		readNotify : readNotify,
@@ -302,6 +345,7 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		getFriendList : getFriendList,
 		getRoomList : getRoomList,
 		getManageList : getManageList,
+
 		getSocket : getSocket
 	};
 });
