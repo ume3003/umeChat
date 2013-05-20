@@ -94,17 +94,25 @@ exports.getRoomMember = function(roomId,callback){
 	});
 }
 exports.getLeftRoomMember = function(roomId,joinMem,callback){
+	var leftMember = undefined;
+	/*
 	var leftMember = undefined,
 		joinString = joinMem.join(',');
 	console.log('left joinM',joinMem,joinString);
+		*/
 	exports.getRoomMember(roomId,function(allMember){
 		console.log('all mem ' ,allMember);
 		if(allMember !== undefined){
 			leftMember = [];
 			for(var i = 0;i < allMember.length;i++){
+				if(joinMem[allMember[i]] === undefined){
+					leftMember.push(allMember[i]);
+				}
+				/*
 				if(joinString.indexOf(allMember[i]) < 0){
 					leftMember.push(allMember[i]);
 				}
+				*/
 			}
 		}
 		callback(leftMember);

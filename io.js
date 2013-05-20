@@ -23,7 +23,6 @@ exports.init = function(){
 			sessionID = cookie[csKey];
 			console.log('in store sessionID ',sessionID);
 			so.store.get(sessionID,function(err,session){
-				console.log('in store',session.userID);
 				if(err){
 					callback(err.message,false);
 				}
@@ -73,7 +72,7 @@ exports.init = function(){
 		// ssIdのキャッシュ
 		so.ssIds[user.id] = socket.id;
 		// ユーザーオブジェクトのキャッシュ
-		users[userID] = user;
+		users[user.id] = user;
 		// サーバクッキーの更新のスケジューリング
 		sessionReloadIntervalID = setInterval(function(){
 			socket.handshake.session.reload(function(){
@@ -102,29 +101,52 @@ exports.init = function(){
 		/* チャットルームに入室し、ルームにIDを登録
 		 */
 		enterRoom = function(roomId,userId,socket){
+			var roomMember,
+				userRoom;
 			socket.join(roomId);
 			if(rooms[roomId] === undefined){
-				rooms[roomId] = [];
+				rooms[roomId] = {};
 			}
+			roomMember = rooms[roomId];
+			if(roomMember[userId] === undefined){
+				roomMember[userId] = userId;
+			}
+			console.log('users',users,'userId',userId);
+			if(users[userId] === undefined){
+				console.log('err user cache is null');
+			}
+			if(users[userId].room === undefined){
+				users[userId].room = {};
+			}
+			userRoom = users[userId].room;
+			userRoom[roomId] = roomId;
+			/*
 			for(var i = 0;i < rooms[roomId].length;i++){
 				if(rooms[roomId][i] === userId){
 					return;
 				}
 			}
 			rooms[roomId].push(userId);
-			
+			*/	
 		};
 		/*
 		 * チャットルームから退室する。ルームIDを削除
 		 */
 		leaveRoom = function(roomId,userId,socket){
-			if(rooms[roomId] !== undefined){
+			if(rooms[roomId] !== undefined && rooms[roomId][userId] !== undefined){
+				delete rooms[roomId][userId];
+				/*
 				for(var i = 0; i < rooms[roomId].length;i++){
 					if(rooms[roomId][i] === userId){
 						rooms[roomId].slice(i,1);
 						break;
 					}
 				}
+				*/
+			}
+			userRoom = users[userId].room;
+			if(userRoom === undefined && userRoom[roomId] !== undefined){
+				delete userRoom[roomId];
 			}
 			console.log('leaveRoom ',rooms[roomId]);
 			socket.leave(roomId);
@@ -279,8 +301,8 @@ exports.init = function(){
 			});
 		});
 		socket.on('getRoomList',function(msg){
-			db.Room.getJoinRoomList(user,function(rooms){
-				socket.emit('gotRoomList',rooms);
+			db.Room.getJoinRoomList(user,function(roomlist){
+				socket.emit('gotRoomList',roomlist);
 			});
 		});
 		socket.on('getLog',function(msg){
@@ -338,16 +360,31 @@ exports.init = function(){
 		/*
 		 * 切断。
 		 */
-		socket.on('disconnect',function(){
+		socket.on('disconnect',function(msg){
+			var userRoom,
+				room;
+			console.log('disconnect ',msg,user.id);
+			console.log(users[user.id]);
+			console.log('rooms',rooms);
 			clearInterval(sessionReloadIntervalID);
-			// TODO:メモリ上のルームからの退出
+			if(users[user.id] !== undefined){
+				userRoom = users[user.id].room;
+				if(userRoom !== undefined){// メモリ上のルームからの退出
+					for(room in userRoom){
+					console.log('before ' ,room,rooms[room]);
+						delete rooms[room][user.id];
+					console.log('after ',room,rooms[room]);
+					}
+				}
+			}
 			db.User.logout(user,function(success){
 				// TODO:通知処理変更
 				console.log(success);
 			});
 			delete so.ssIds[user.id];
-			delete users[userID];
-			socket.broadcast.emit('logout',userID);
+			console.log('delete ',user.id,users[user.id]);
+			delete users[user.id];
+			socket.broadcast.emit('logout',user.id);
 		});
 	});
 };

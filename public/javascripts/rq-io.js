@@ -19,6 +19,7 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 	init = function(param){
 		console.log('connect to server');
 		socket = io.connect();
+		console.log(socket);
 		/*
 		 *
 		 *
