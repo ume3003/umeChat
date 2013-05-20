@@ -11,7 +11,7 @@ var _collection,
 
 exports.collection = function(){
 	return _collection;
-}
+};
 exports.init = function(db){
 	NotifySchema = new db.Schema({
 		from_id			: String,

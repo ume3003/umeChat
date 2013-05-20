@@ -80,10 +80,10 @@ exports.init = function(){
 				socket.handshake.session.touch().save();
 			});
 		},60 * 2 * 1000);
-		/************************/
-		/*	connect の際の処理
-		/* 初期化ここまで       */
-		/************************/
+		/***********************
+		*	connect の際の処理
+		* 初期化ここまで      
+		************************/
 		/*
 		 * ヘルパ関数
 		 */
@@ -160,7 +160,6 @@ exports.init = function(){
 		socket.on('requestFriend',function(msg){
 			db.User.addFriend(user,msg.tgt,function(you){
 				db.Notify.requestNotify(user.id,you.user_id,function(notify){
-					// TODO: 通知処理
 					notifyMessage('requestComming',you.user_id,{from:user.id,msg:'requested'});
 					socket.emit('requestedFriend',{you:you,tgt:msg.tgt});
 				});
@@ -170,7 +169,6 @@ exports.init = function(){
 		socket.on('approveFriend',function(msg){
 			db.User.approveFriend(user,msg.info,function(success){
 				db.Notify.approveNotify(user.id,msg.info.user_id,function(notify){
-					// TODO: 通知処理
 					notifyMessage('approveComming',msg.info.user_id,{from:user.id,msg:'approved'});
 					socket.emit('approvedFriend',{success:success});
 				});
@@ -183,17 +181,18 @@ exports.init = function(){
 		});
 
 
-		socket.on('sayChat',function(msg){	// TODO:ここでルームチェックとルームへのチャットデータの登録を行う
-			console.log('get chat ',msg);
+		socket.on('sayChat',function(msg){	
 			db.Room.sayChat(user.id,msg.roomId,msg.msg,'0',function(chat){
 				if(chat !== undefined){
 					// ルームを開いているメンバーに直接送信
 					chatObject.to(msg.roomId).emit('someoneSaid',chat);
 					db.Room.getLeftRoomMember(msg.roomId,rooms[msg.roomId],function(member){
+						console.log('leftmember ',member);
 						if(member !== undefined){
 							for(var i = 0; i < member.length;i++){
 								(function(_i){			// 開いていない人にはNotifyを保存
 									db.Notify.chatNotify(msg.roomId,member[_i],chat.id,chat.lastAccess,function(notify){
+										console.log('chatNotify',notify,_i);
 										notifyMessage('sayNotify',member[_i],{roomId:msg.roomId,chatId:chat.id,notifyId:notify.id});
 									});
 								})(i);
@@ -214,7 +213,6 @@ exports.init = function(){
 		socket.on('inviteRoom',function(msg){
 			// DBに記録する
 			db.Notify.inviteNotify(user.id,msg.tgtId,msg.roomId,function(notify){
-				// TODO;通知処理
 				notifyMessage('invited',msg.tgtId,{roomId:msg.roomId,notifyId:notify.id});
 			});
 		});
@@ -227,7 +225,6 @@ exports.init = function(){
 			db.joinRoom(user,msg.roomId,function(success){
 				if(success){
 					enterRoom(msg.roomId,user.id,socket);
-					// TODO:通知処理
 					chatObject.to(roomId).emit('newoneJoined',{id:user.id});		// 入室したルームにブロードキャスト
 				}
 				socket.emit('joinedRoom',{success:success});				// 自分自身に入室成功を返す
@@ -241,7 +238,6 @@ exports.init = function(){
 			db.leaveRoom(msg,msg.roomId,function(success){
 				if(success){
 					leaveRoom(msg.roomId,user.id,socket);
-					// TODO:通知処理
 					chatObject.to(roomId).emit('someoneLeft',{id:user.id});		// 退出したルームにブロードキャスト
 				}
 				socket.emit('leftRoom',{success:success});					// 自分自身に退出成功を返す
@@ -333,7 +329,6 @@ exports.init = function(){
 		socket.on('startChatTo',function(msg){
 			db.startChatTo(user,msg.tgtId,function(room){
 				if(room !== undefined){
-					// TODO:通知
 					notifyMessage('startChatWith',msg.tgtId,room);
 				}
 				socket.emit('startedChatTo',room);		// 自分に
@@ -345,6 +340,7 @@ exports.init = function(){
 		 */
 		socket.on('disconnect',function(){
 			clearInterval(sessionReloadIntervalID);
+			// TODO:メモリ上のルームからの退出
 			db.User.logout(user,function(success){
 				// TODO:通知処理変更
 				console.log(success);
