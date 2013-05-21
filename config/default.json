@@ -2,6 +2,8 @@
 	"configType" : "default",
 	"secretKey" : "secret nyanko",
 	"cookieSessionKey" : "csid",
+	"consumerKey" : "itQhwSZrT1XdCteBC87hHQ",
+	"consumerSecret" : "6yJzlYN14DXJB7Gt6zoKhFCzEEstXBydEPizNaPEkI",
 	"mongoURL" : "mongodb://localhost/umeChat",
 	"testVal" : "def",
 	"msg" : {

@@ -323,11 +323,19 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	setChat = function(i,chat){
 		var $listItem = createItem(2,undefined,'listDock'),
 			$msgItem,
+			friend,
+			fName = chat.sayid,
+			pict = chat.pict,
 			height = 14;
 		console.log(chat.sayid,' ',user._id,' ',user.id);
 		if(chat.sayid !== user.id){
-			$listItem.append('<div/>').find(':last').addClass('textS cmName').text(chat.sayid);
-			$listItem.append('<div/>').find(':last').addClass('listPhoto photoS').css('background-image','url(' + chat.pict + ')');
+			friend = friendInfo[chat.sayid];
+			if(friend !== undefined){
+				fNamex	= friend.displayName;
+				pict	= friend.photo;
+			}
+			$listItem.append('<div/>').find(':last').addClass('textS cmName').text(fName);
+			$listItem.append('<div/>').find(':last').addClass('listPhoto photoS').css('background-image','url(' + pict + ')');
 			$listItem.append('<div/>').find(':last').addClass('textS cmTime').text(toChatTime(chat.lastAccess));
 
 			$msgItem = $listItem.append('<div/>').find(':last').corner();
@@ -337,6 +345,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		}
 		else{
 			$listItem.append('<div/>').find(':last').addClass('textS cmTimeMe').text(toChatTime(chat.lastAccess));
+			$listItem.append('<div/>').find(':last').addClass('listPhoto photoS').css('background-image','url(' + user.photo + ')');
 			$msgItem = $listItem.append('<div/>').find(':last').corner();
 			$msgItem.addClass('textC cmMsgMe').text(chat.body);
 			height = $msgItem.get(0).clientHeight;

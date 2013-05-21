@@ -1,7 +1,8 @@
 var _collection,
 	_schema,
 	_chat,
-	_friend;
+	_friend,
+	ps = require('../passport');
 
 exports.collection = function(){
 	return _collection;
@@ -10,7 +11,6 @@ exports.collection = function(){
 exports.schema = function(){
 	return _schema;
 };
-
 exports.init = function(db,chat,friend)
 {
 	_chat = chat;
@@ -27,7 +27,8 @@ exports.init = function(db,chat,friend)
 		friends		: [friend.schema()],
 		privates	: {type:String,default:'f'},
 		created		: {type:Date,default:Date.now},
-		lastAccess	: {type:Date,default:Date.now}
+		lastAccess	: {type:Date,default:Date.now},
+		type		: String
 	});
 	_collection = db.model('user',_schema);
 }
@@ -59,13 +60,13 @@ exports.getFriendList = function(user,callback)
 // 特定のユーザーにフレンドを追加する。デフォルトのステータスはinvite
 exports.addFriend = function(user,friendEmail,callback)
 {
-	if(friendEmail === user.emails[0].value){
+	if(friendEmail === ps.userKey(user)){
 		console.log('same user');
 		callback(undefined);
 	}
 	_collection.find({email:friendEmail},function(err0,targetYou){	// そのフレンドがそもそもユーザーにいるか
 		var	friend	= {user_id:''	  ,email:friendEmail			,stat:'0'},			// 自分のテーブルに追加するフレンドの情報
-			me		= {user_id:user.id,email:user.emails[0].value	,stat:'1'},		// フレンドのテーブルに追加する自分の情報
+			me		= {user_id:user.id,email:ps.userKey(user)		,stat:'1'},		// フレンドのテーブルに追加する自分の情報
 			passkey = '0000' + Math.floor(Math.random() * 10000),
 			isUser	= false;
 		if(!err0 ){
@@ -115,10 +116,10 @@ exports.addFriend = function(user,friendEmail,callback)
 // db.users.update( {email:'ume3003@gmail.com','friends.email':'ume3@gmail.com'},{$set:{"friends.$.stat":'9'}})
 exports.approveFriend = function(user,friend,callback){
 	var myQuery		= {_id:user.id,'friends.email':friend.email},
-		yourQuery	= {email:friend.email,'friends.email':user.emails[0].value}
+		yourQuery	= {email:friend.email,'friends.email':ps.userKey(user)}
 		Update		= {$set:{'friends.$.stat':'2'}};
 
-	console.log('approveFriend ',user.emails[0].value,friend.email,myQuery,yourQuery,Update);
+	console.log('approveFriend ',ps.userKey(user),friend.email,myQuery,yourQuery,Update);
 	_collection.update(myQuery,Update,function(err){
 		if(!err){
 			_collection.update(yourQuery,Update,function(err2){
@@ -137,7 +138,7 @@ exports.approveFriend = function(user,friend,callback){
 // db.users.update({email:'ume3003@gmail.com'},{$pull:{'friends':{'email':'ume4@gmail.com'}}})
 exports.cancelFriend = function(user,friend,callback){
 	var myQuery		= {_id : user.id}		,myUpdate	= { $pull : {friends : {email:friend.email}}},
-		yourQuery	= {email:friend.email}	,yourUpdate	= { $pull : {friends : {email:user.emails[0].value }}};
+		yourQuery	= {email:friend.email}	,yourUpdate	= { $pull : {friends : {email:ps.userKey(user) }}};
 	
 	_collection.update(myQuery,myUpdate,function(err){				// 自分のフレンドステータスの変更
 		if(err){
@@ -167,7 +168,7 @@ exports.findUser = function(query,callback){
 		var uData	= undefined;
 		if(docs.length > 0){
 			uData	= docs[0];
-			uData.photo = '/images/macallan.jpg';
+//			uData.photo = uData.photo === undefined ?'/images/macallan.jpg';
 			uData.comment = docs[0].lastComment;
 		}
 		callback(uData);
@@ -181,10 +182,11 @@ exports.addUser = function(uData,callback){
 		comment = {body:'nothing',lastAccess:new Date()};
 	newUser.user_id		= uData.identifier;
 	newUser.displayName = uData.displayName;
-	newUser.email		= uData.emails[0].value;
+	newUser.email		= ps.userKey(uData);
 	newUser.comments	= [comment];
 	newUser.lastComment		= comment.body;
-	newUser.photo = 'public/images/none.jpg';
+	newUser.photo = ps.userPhoto(uData);
+	newUser.type = uData.type;
 	exports.findUser({"email" : newUser.email},function(dum){
 		if(dum === undefined){
 			console.log(newUser);

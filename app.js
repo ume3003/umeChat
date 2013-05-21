@@ -4,7 +4,7 @@
 var 
 	 so				= require('./shareObj'),
 	io				= require('./io'),
-	auth			= require('./passport-google'),
+	passport		= require('./passport'),
 	db				= require('./db');
 	
 
@@ -35,7 +35,7 @@ so.app.use(so.app.router);
 so.app.use(so.express.static(so.path.join(__dirname, 'public')));
 
 // passport 
-auth.init();
+passport.init();
 
 // development only
 if ('development' == so.app.get('env')) {
@@ -47,7 +47,7 @@ so.app.get('/logout', so.routes.logout);
 so.app.get('/users', so.user.list);
 
 // auth routesの追加
-auth.addRoutes();
+passport.addRoutes();
 
 // httpサーバ
 so.server = so.http.createServer(so.app);

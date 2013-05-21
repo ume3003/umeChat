@@ -1,34 +1,11 @@
-var so = require('./shareObj'),
-//	db = require('./mongo');
-	db = require('./db');
+var so = require('../shareObj'),
+	db = require('../db');
 
 exports.init = function()
 {
 	var passport = so.passport,
 		GoogleStrategy	= require('passport-google').Strategy;
 
-	passport.serializeUser(function(user,done){
-		// ここでDBに保存
-		db.User.findUser({email : user.emails[0].value},function(userDB){
-			if(userDB === undefined){	// 新規
-				console.log(' new user ');
-				db.User.addUser(user,function(err,newUser){
-					console.log('after add user ' ,newUser.id);
-					done(null,newUser.id);
-				});
-			}
-			else{ // 既存
-				console.log(' current user ' + userDB.id);
-				done(null,userDB.id);
-			}
-		});
-	});
-
-	passport.deserializeUser(function(objID,done){
-		db.User.findUser({_id : objID},function(userDB){
-			done(null,userDB);
-		});
-	});
 
 	passport.use(
 		new GoogleStrategy(

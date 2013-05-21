@@ -14,6 +14,7 @@
     "connect-redis" : "*",
     "passport" : "*",
     "passport-google" : "*",
+    "passport-twitter" : "*",
 	"mongoose":"*",
     "ejs": "*"
   }

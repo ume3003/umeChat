@@ -1,6 +1,8 @@
 // share objects
-var config = require('config');
-
+var config = require('config'),
+	_users = {},
+	_rooms = {},
+	_socketId = {};
 module.exports = {
 	ssIds	: undefined,
 	express : undefined,
@@ -18,6 +20,8 @@ module.exports = {
 	http	: undefined,
 	ssKey	: undefined,
 	csKey	: undefined,
+	cmKey	: undefined,
+	cmSec	: undefined,
 	mongoURL: undefined,
 	errMsg	: undefined,
 	msg		: undefined,
@@ -43,6 +47,8 @@ module.exports.init = function(){
 	module.exports.http		= require('http');
 	module.exports.ssKey	= config.secretKey;
 	module.exports.csKey	= config.cookieSessionKey;
+	module.exports.cmKey	= config.consumerKey;
+	module.exports.cmSec	= config.consumerSecret;
 	module.exports.mongoURL = config.mongoURL;
 	module.exports.errMsg	= config.errMsg;
 	module.exports.msg		= config.msg;
@@ -57,3 +63,44 @@ module.exports.init = function(){
 		module.exports.store = new RedisStore({db : 1,prefix:'session:'});  // 1はredis内のDB番号
 	}
 };
+module.exports.pushUser = function(key,val){
+	_users[key] = val;
+};
+module.exports.getUser = function(key){
+	return _users[key];
+};
+module.exports.pullUser = function(key){
+	delete _users[key];
+};
+module.exports.pushSocketId = function(key,val){
+	_socketId[key] = val;
+};
+module.exports.getSocketId = function(key){
+	return _socketId[key];
+};
+module.exports.pullSocketId = function(key){
+	delete _socketId[key];
+};
+module.exports.pushRoomMember = function(key,member){
+	var room = module.exports.getRoom(key);
+	room[member] = member;
+};
+module.exports.pullRoomMember = function(key,member){
+	var room = module.exports.getRoom(key);
+	if(room[member] !== undefined){
+		delete room[member];
+	}
+};
+module.exports.pushRoom = function(key,val){
+	_rooms[key] = val;
+};
+module.exports.getRoom = function(key){
+	if(_rooms[key] === undefined){
+		_rooms[key] = {};
+	}
+	return _rooms[key];
+};
+module.exports.pullRoom = function(key){
+	delete _rooms[key];
+};
+
