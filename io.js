@@ -3,6 +3,7 @@
  */
 var		so	= require('./shareObj')	,
 		db	= require('./db'),
+		ps	= require('./passport'),
 		io,
 		chatObject;
 	;
@@ -132,8 +133,22 @@ exports.init = function(){
 		 * 自分の情報を送信
 		 */
 		socket.on('getMyInfo',function(mes){
-			var _user = socket.handshake.session.user;
-			socket.emit('gotMyInfo',_user);
+			var _user = socket.handshake.session.user,
+				uData = {};
+			uData.id = _user.id;
+			uData.identifier = _user.identifier;
+			uData.displayName = _user.displayName;
+			uData.photo = ps.userPhoto(_user);
+			uData.email = ps.userKey(_user);
+			uData.tokenSecret = _user.tokenSecret;
+			uData.type = _user.type;
+			console.log(uData.type);
+			if(uData.type === 'Twitter'){
+				ps.twitter.getFriend(uData.identifier,uData.tokenSecret,function(jsonData){
+					console.log(jsonData);
+				});
+			}
+			socket.emit('gotMyInfo',uData);
 		});
 		/*
 		 *  通知をよんだ

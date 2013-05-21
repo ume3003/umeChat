@@ -14,10 +14,11 @@ require.config({
 
 define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],
 	function($){
-		var 
-			$tabItem = [$('#friendTab').corner(),$('#roomTab').corner(),$('#chatTab').corner(),$('#manageTab').corner()]
-		,	$tabBase = [$('#friendBase'),$('#roomBase'),$('chatBase'),$('#manageBase')]
-		;
+		var $tabItem = [$('#friendTab').corner(),$('#roomTab').corner(),$('#chatTab').corner(),$('#manageTab').corner()],
+			$tabBase = [$('#friendBase'),$('#roomBase'),$('chatBase'),$('#manageBase')];
+		console.log('------');
+		console.log(document.cookie);	
+		console.log('------');
 	}
 );
 

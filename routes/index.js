@@ -4,7 +4,13 @@
  */
 
 exports.index = function(req, res){
-	console.log('in index ' ,req.sessionID);
+	if(req.session.user){
+		console.log('has user data ');
+		req.user = req.session.user;
+	}
+	else{
+		console.log('no user data');
+	}
   res.render('rq-index', { 
         title: 'チャット'
       , user:req.user
@@ -16,6 +22,7 @@ exports.logout = function(req,res){
     if(err){
       console.log(err);
     }
+	console.log('logout ',req.sessionID);
     res.redirect('/');
   });
 };
