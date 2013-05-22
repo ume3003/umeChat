@@ -1,29 +1,10 @@
 var so = require('../shareObj'),
-	db = require('../db'),
-	ts;
-exports.getFriend = function(token,secret,callback)
-{
-	console.log('-----getFriend------');
-	console.log(token,'---',secret);
-	ts._oauth.getProtectedResource(
-		'https://api.twitter.com/1.1/search/tweets.json?q='+ 'とある',
-		'GET',
-		token,
-		secret,
-		function(err,data,response){
-			if(err){
-				console.log(err);
-				return;
-			}
-			var jsonObj = JSON.parse(data);
-			callback(jsonData);
-		}
-	);
-};
+	db = require('../db');
+	
 exports.init = function()
 {
 	var passport = so.passport,
-		TwitterStrategy	= require('passport-twitter').Strategy;
+		TwitterStrategy	= require('passport-twitter').Strategy,
 	ts = 
 		new TwitterStrategy(
 		{

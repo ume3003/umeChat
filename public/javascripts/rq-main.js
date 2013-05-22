@@ -24,7 +24,6 @@ define(['ui','ioc','socketio','jquery','jquery.corner','jquery.jscrollpane','jqu
 
 		socket = ioc.init();
 		ui.init();
-		ui.showTab(0);
 	}
 );
 

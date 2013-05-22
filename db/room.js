@@ -8,7 +8,8 @@ var _collection,
 		member :3,
 		created:4,
 		lastAccess:5,
-		mode:6
+		mode:6,
+		lastSay:7
 	};
 
 exports.collection = function(){
@@ -21,6 +22,7 @@ exports.init = function(db,chat){
 			roomName	: String,
 			member		: [String],
 			mode		: Number,
+			lastSay		: String,
 			chat		: [chat.schema()],				// id:{user.id} flag:{reader's count} body:{message}
 			created		: {type:Date,default:Date.now},
 			lastAccess	: {type:Date,default:Date.now}
@@ -66,6 +68,7 @@ exports.addRoom = function(roomInfo,callback){
 	room.roomName = roomInfo.roomName;
 	room.member = roomInfo.member;
 	room.chat = roomInfo.chat;
+	room.lastSay = '';
 	room.mode = roomInfo.mode !== undefined ? roomInfo.mode : 1;
 	room.save(function(err){
 		callback(!err ? room : undefined);
@@ -129,7 +132,7 @@ exports.sayChat = function(userId,roomId,message,flag,callback){
 	newChat.flag = flag;
 	newChat.body = message;
 	newChat.lastAccess = new Date();
-	_collection.update({_id:roomId},{$push:{chat:newChat}},function(err){
+	_collection.update({_id:roomId},{$set:{lastAccess:newChat.lastAccess,lastSay:message},$push:{chat:newChat}},function(err){
 		console.log(newChat.id);		// _idが撮れてる
 		callback(!err ? newChat : undefined);
 	});
@@ -163,6 +166,9 @@ exports.sayChat = function(userId,roomId,message,flag,callback){
 exports.getLog = function(user,roomId,lastAccess,count,callback){
 	console.log('origin String ',lastAccess);
 	var dLast = new Date(lastAccess);
+	if(count <= 0){
+		callback(undefined);
+	}
 	_collection.aggregate({'$unwind':'$chat'},
 					{'$match':{'_id':_db.Types.ObjectId(  roomId  )}},
 					{'$match':{'chat.lastAccess' : {'$lt':dLast}}},

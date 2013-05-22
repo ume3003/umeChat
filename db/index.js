@@ -20,12 +20,12 @@ exports.startChatTo = function(user,tgtId,callback){
 	// roomを探しあったらそっち
 	exports.Room.findChat(user,tgtId,function(existRoom){
 		if(existRoom !== undefined && existRoom.length > 0){
-			callback(existRoom[0]);
+			callback({room:existRoom[0],create:false});
 		}
 		else{
 			exports.createRoom(user,roomInfo,function(room){
 				exports.User.addRoomInfo(tgtId,{id:room.id,flag:'1',lastAccess:new Date()},function(success){
-					callback(success ? room : undefined);
+					callback({room:success ? room : undefined,create:true});
 				});
 			});
 		}

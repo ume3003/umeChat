@@ -36,10 +36,17 @@ exports.init = function(db,chat,friend)
 // beInvite '0' '1' '2' 2はつかわずにFriendListを使うこと
 exports.getInviteList = function(user,beInvite,callback)
 {
+	_collection.aggregate({'$unwind':'$friends'},{'$match': { 'friends.user_id':user.id}},{'$match':{'friends.stat':beInvite}}
+			,function(err,docs){
+	console.log(err,docs);	
+		callback((!err && docs && docs.length > 0 ) ? docs : undefined);
+	});
+	/*
 	var query = {_id:user.id,"friends.stat":beInvite,privates:'f'};
 	_collection.find(query,function(err,docs){
 		callback((!err && docs && docs.length > 0 && docs[0].friends) ? docs[0].friends : undefined);
 	});
+	*/
 };
 
 // 特定のユーザーのフレンドの一覧を返す
@@ -49,8 +56,10 @@ exports.getFriendList = function(user,callback)
 	var query	= {'friends.user_id':user.id,'friends.stat':'2'},
 		columns = {user_id:1,displayName:2,email:3,lastComment:4,photo:5,lastAccess:6};
 	console.log(query,columns);
-	_collection.find(query,columns,function(err,friends){
-		console.log(friends[0]);
+	//_collection.find(query,columns,function(err,friends){
+	_collection.aggregate({'$unwind':'$friends'},{'$match': { 'friends.user_id':user.id}},{'$match':{'friends.stat':'2'}},columns
+		,function(err,friends){
+		console.log(friends);
 		callback(!err ? friends : undefined);
 	});
 }

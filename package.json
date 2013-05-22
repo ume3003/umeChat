@@ -15,6 +15,7 @@
     "passport" : "*",
     "passport-google" : "*",
     "passport-twitter" : "*",
+	"ntwitter" : "*",
 	"mongoose":"*",
     "ejs": "*"
   }

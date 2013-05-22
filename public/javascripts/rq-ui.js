@@ -5,7 +5,8 @@ require.config({
 		'jquery.mousewheel' : '/javascripts/jquery.mousewheel.min',
 		'jquery.jscrollpane' : '/javascripts/jquery.jscrollpane.min',
 		'ioc' : '/javascripts/rq-io',
-		'uiparts' : '/javascripts/rq-parts'
+		'uiparts' : '/javascripts/rq-parts',
+		'manage' : '/javascripts/rq-manage'
 	},
 	shim:	{		// 依存関係
 		'jquery.corner' : ['jquery'],
@@ -13,14 +14,16 @@ require.config({
 		'jquery.jscrollpane' : ['jquery']
 	}
 });
-define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],function(ioc,uiparts,$){
+define(['ioc','uiparts','manage','jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],function(ioc,uiparts,manage,$){
 	var
 		user = undefined,
 		i,
 		tabIndex = -1,
 		headerNumber = [0,0,0,0],
 		currentRoom = undefined,
+		previousRoom = undefined,
 		friendInfo = {},
+		roomInfos = {},
 		$tabItem,
 		$scroll  = {},					// スクロール用のオブジェクト
 		$tabBase	= [$('#friendBase'),$('#roomBase'),$('#chatBase'),$('#manageBase')],
@@ -41,8 +44,9 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	someoneSaid = function(msg){
 		var cnt = $chatItems[currentRoom].length;
 		console.log('ui control function',msg);
-		$chatItems[currentRoom][cnt] = setChat(cnt,msg);
+		$chatItems[currentRoom][cnt] = setChat(cnt,msg,false);
 		$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
+		updateRoomInfo(msg,currentRoom);
 	},
 	disconnection = function(msg){
 		window.location.reload();
@@ -51,6 +55,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	sayNotify = function(msg){
 		addHeaderNum(2,1);	// ここどうするか・・・ TODO	
 		console.log(msg);
+		updateRoomInfo(msg,msg.roomId);
 	},
 	gotNotifies = function(msg){
 		var i,mx;
@@ -142,6 +147,14 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		var newVal = headerNumber[index] - subNum;
 		setHeaderNum(index,newVal);
 	},
+	createHeader = function(_user){
+		user = _user;
+		$('#myPhoto').css('background-image','url(' + user.photo + ')');
+		$('#myName').text(user.displayName);
+		$('#myEmail').text(user.email);
+		$('#myComment').text(user.lastComment);
+		$baseHead.show();
+	},
 	init = function(){
 		console.log('init');
 		// サーバからの通知のコールバック登録
@@ -156,19 +169,19 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		ioc.someoneLeft(someoneLeft);
 		ioc.startChatWith(startChatWith);
 
+		manage.init();
 		$tabItem = [$('#friendTab').corner(),$('#roomTab').corner(),$('#chatTab').corner(),$('#manageTab').corner()];
 		for(i = 0;i < 4;i++){		
 			(function(arg){			// タブ切り替え
-				$tabItem[arg].click(function(){	showTab(arg,function(){}); });
+				$tabItem[arg].click(function(){	showTab({tab:arg}); });
 			})(i);
 			$scroll[i] = $tabBase[i].append('<div/>').find(':last');
 			setHeaderNum(i,0);
 		}
 		ioc.getMyInfo(function(_user){
-			user = _user;
+			createHeader(_user);
 		});
 		getList(0,true);
-		$baseHead.show();
 		prepareAddFriendbox();
 		$chatEntry.keypress(function(event){
 			var $area = $(this),
@@ -201,11 +214,25 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				$detailWin.hide();
 		});
 	},
-	createItem = function(num,height,listClass){
-		var $listItem = $scroll[num].append('<div/>').find(':last');	// タブのリスト本体
-		$listItem.addClass(listClass);
-		if(height !== undefined){  $listItem.css({'height':height}); }
-		return $listItem;
+	getOlderChat = function(roomId,oldest){
+		var i,sFunc,oldest2;
+		ioc.getLog({roomId:roomId,lastAccess:oldest,count:10},function(logs){
+			if(logs !== undefined){
+				for(i = logs.length -1 ; i >= 0;i--){
+					$chatItems[currentRoom][i] = setChat(i,logs[i].chat,true);
+				}
+			}
+			sFunc = function(event){
+				if(event.target.scrollTop === 0){
+					oldest2 = logs !== undefined ? logs[0].chat.lastAccess : oldest;
+					$tabBase[2].unbind('scroll',sFunc);
+					getOlderChat(roomId,oldest2);
+				}
+			};
+			if(logs !== undefined && logs[0] !== undefined){
+				$tabBase[2].bind('scroll',sFunc);
+			}
+		});
 	},
 	makeChatPage = function(roomInfo,tgtInfo){
 		var $roomPict = $('#roomPict'),
@@ -239,9 +266,10 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		while(scroll2.hasChildNodes()){
 			scroll2.removeChild(scroll2.firstChild);
 		}
+
 		// 最新のチャットを取ってくる。
 		ioc.getUnreadChat({roomId:roomInfo._id},function(articles){
-			var i,
+			var i,j,
 				chatCnt = (articles === undefined ? 0 : articles.length),
 				lastAcc = undefined;
 			// 未読から
@@ -249,24 +277,35 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			subHeaderNum(2,chatCnt);
 			lastAcc = chatCnt === 0 ? new Date() : articles[0].lastAccess;
 			// 未読＋既読１０行分
-			for(i = 0;i < chatCnt;i++){
-				$chatItems[currentRoom][i] = setChat(i,articles[i]);
-			}
-			$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
-			if(chatCnt < 10){
-				ioc.getLog({roomId:roomInfo._id,lastAccess:lastAcc,count:10 - chatCnt},function(logs){
-					if(logs !== undefined){
-						for(i = 0 ; i < logs.length;i++){
-							$chatItems[currentRoom][i+chatCnt] = setChat(i+chatCnt,logs[i].chat);
-							$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
-						}
+			ioc.getLog({roomId:roomInfo._id,lastAccess:lastAcc,count:10 - chatCnt},function(logs){
+				var scrollFunc,
+					oldest;
+				if(logs !== undefined){
+					for(i = 0 ; i < logs.length;i++){
+						$chatItems[currentRoom][i] = setChat(i,logs[i].chat,false);
 					}
-				});
-			}			
+				}
+				for(i = 0;i < chatCnt;i++){
+					j = i + 10 - chatCnt;
+					$chatItems[currentRoom][j] = setChat(j,articles[i],false);
+				}
+				$tabBase[2].get(0).scrollTop = $tabBase[2].get(0).scrollHeight;
+				scrollFunc = function(event){
+					if(event.target.scrollTop === 0){
+						oldest = logs !== undefined ? logs[0].chat.lastAccess : lastAcc;
+						$tabBase[2].unbind('scroll',scrollFunc);
+						getOlderChat(roomInfo._id,oldest);
+					}
+				};
+				if(chatCnt === 10 || logs !== undefined){
+					$tabBase[2].bind('scroll',scrollFunc);
+				}
+			});
 		});
 	},
 	setFriend = function(i,doc){
-		var $listItem = createItem(0,'52px','listDocBox');
+		var $listItem = uiparts.createItem({scroll:$scroll[0],height:'52px',listClass:'listDocBox',isPrepend:false});
+		doc.$listItem = $listItem;
 		friendInfo[doc._id] = doc;
 		console.log(doc._id,' in ',friendInfo[doc._id].displayName);
 		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + doc.photo + ')');
@@ -276,62 +315,62 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			$listItem.click(function(){
 				ioc.startChatTo({tgtId:doc._id},function(room){
 					if(room !== undefined){
-						console.log('FriendClick',room);
-						ioc.openRoom({roomId:room._id},function(success){
-							if(success){
-								makeChatPage(room,doc);
-								showTab(2,function(){
-									console.log(arg,room);
-								});
-							}
-						});
+						showTab({tab:2,room:room,tgt:doc});
 					}
 				});
 			});
 		})(i);
 		return $listItem;
 	},
+	updateRoomInfo = function(chat,roomId){
+		var room = roomInfos[roomId],
+			$listItem = room !== undefined ? room.$listItem : undefined,
+			$lastSay = $listItem !== undefined ? $listItem.$lastSay : undefined,
+			$chatTime = $listItem !== undefined ? $listItem.$chatTime : undefined;
+		if($lastSay !== undefined ){
+			$lastSay.text(chat.body);
+		}
+		if($chatTime !== undefined ){
+			$chatTime.text(toChatTime(chat.lastAccess));
+		}
+	},
 	setRoom = function(i,room){
-		var $listItem = createItem(1,'52px','listDocBox'),
+		var $listItem = uiparts.createItem({scroll:$scroll[1],height:'52px',listClass:'listDocBox',isPripend:false}),
 			userId,
 			roomURL,
 			roomName = room.name;
-
+		room.$listItem = $listItem;
+		roomInfos[room._id] = room;
+		
 		if(room.mode === 0){
-			userId = room.member[0] !== user.id ? room.member[0] : room.member[1];
-			console.log(userId,friendInfo[userId]);
+			userId = room.member[0] !== user._id ? room.member[0] : room.member[1];
 			roomName = friendInfo[userId].displayName;
 			roomURL = friendInfo[userId].photo;
 		}
 
 		$listItem.append('<div/>').find(':last').addClass('textM rmName').text(roomName + ' ' + room.member.length);
 		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + roomURL  + ')');
-		$listItem.append('<div/>').find(':last').addClass('textS rmTime').text(toChatTime(room.lastAccess));
-		$listItem.append('<div/>').find(':last').addClass('textS rmComm textEllipsis').text(room.roomOwner);
+		$listItem.$chatTime = $listItem.append('<div/>').find(':last').addClass('textS rmTime').text(toChatTime(room.lastAccess));
+		$listItem.$lastSay  = $listItem.append('<div/>').find(':last').addClass('textS rmComm textEllipsis').text(room.lastSay);
 		(function(arg){
 			$listItem.click(function(){
-				// TODO:ここはメニュー
-			});
-			$listItem.dblclick(function(){
-				changeTab(2,function(){	// TODO:ひらいたチャットの内容の取得
-					console.log(arg,room.id);
-				});
+				showTab({tab:2,room:room,tgt:friendInfo[userId]});
 			});
 		})(i);
 		return $listItem;
 	},
-	setChat = function(i,chat){
-		var $listItem = createItem(2,undefined,'listDock'),
+	setChat = function(i,chat,isPrepend){
+		var $listItem = uiparts.createItem({isPrepend:isPrepend,scroll:$scroll[2],listClass:'listDock'}),
 			$msgItem,
 			friend,
 			fName = chat.sayid,
 			pict = chat.pict,
 			height = 14;
-		console.log(chat.sayid,' ',user._id,' ',user.id);
-		if(chat.sayid !== user.id){
+		console.log(chat.sayid,' ',user._id);
+		if(chat.sayid !== user._id){
 			friend = friendInfo[chat.sayid];
 			if(friend !== undefined){
-				fNamex	= friend.displayName;
+				fName	= friend.displayName;
 				pict	= friend.photo;
 			}
 			$listItem.append('<div/>').find(':last').addClass('textS cmName').text(fName);
@@ -348,8 +387,9 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			$listItem.append('<div/>').find(':last').addClass('listPhoto photoS').css('background-image','url(' + user.photo + ')');
 			$msgItem = $listItem.append('<div/>').find(':last').corner();
 			$msgItem.addClass('textC cmMsgMe').text(chat.body);
-			height = $msgItem.get(0).clientHeight;
-			$listItem.css('height', (9 + height ) + 'px');
+			height = $msgItem.get(0).clientHeight + 9;
+			height = height < 48 ? 48 : height;
+			$listItem.css('height', height + 'px');
 		}
 		return $listItem;
 	},
@@ -362,7 +402,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		}
 	},
 	setManage = function(i,manage){
-		var $listItem = createItem(3,'52px','listDock'),
+		var $listItem = uiparts.createItem({scroll:$scroll[3],height:'52px',listClass:'listDock',isPrepend:false}),
 			manageString = {'0':'申請中','1':'申請あり','9':'申請中'};
 		if(manage.stat ==='9'){
 			$listItem.append('<div/>').find(':last').addClass('textS mnEntry').text(manage.user_id);
@@ -420,7 +460,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				$roomItems[i] = setRoom(i,doc);
 				break;
 			case 2:
-				$chatItems[currentRoom][i] = setChat(i,doc);
+				$chatItems[currentRoom][i] = setChat(i,doc,false);
 				break;
 			case 3:
 				$manageItems[i] = setManage(i,doc);
@@ -436,8 +476,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			}
 		}
 		if(bShow){
-			console.log('showTab',arg);
-			showTab(arg,function(){console.log('create list');});
+			showTab({tab:arg});
 		}
 	},
 	getList = function(arg,bShow){
@@ -457,9 +496,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			case 2:		// チャットは開くときに都度とる
 				break;
 			case 3:
-				ioc.getManageList(function(list){
-					createList(arg,list,bShow);
-				});
+				manage.makeList(arg,bShow,createList);
 				break;
 			default:
 				break;
@@ -470,12 +507,10 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		$chatBox.show();
 		$chatEntry.focus();
 	},
-	showManageBox = function(){
-		$manageBox.show();
-		$baseHead.show();
-		$manageInput.focus();
-	},
-	showTab = function(arg,callback){
+	showTab = function(param){
+		var arg = param.tab,
+			roomId = param.room === undefined ? previousRoom : param.room._id,
+			room = param.room;
 		console.log('showTab ' , arg);
 		if(arg !== tabIndex ){
 			// 事前のページの非表示
@@ -491,11 +526,11 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 					$chatHead.hide();
 					$chatBox.hide();
 					ioc.closeRoom({roomId:currentRoom});
+					previousRoom = currentRoom;				// 違うルームに入室する場合にチャットページを再作成するように保存	
 					currentRoom = -1;
 					break;
 				case 3:
-					$baseHead.hide();
-					$manageBox.hide();
+					manage.hide();
 					break;
 				default:
 					break;
@@ -508,23 +543,27 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 					$baseHead.show();
 					break;
 				case 2:
-					showChatBox();
+					ioc.openRoom({roomId:roomId},function(success){
+						if(success){
+							currentRoom = previousRoom;
+//							if(roomId != previousRoom){
+								makeChatPage(room,param.tgt);
+//							}
+							showChatBox();
+						}
+					});
 					break;
 				case 3:
-					showManageBox();
+					manage.show();
 					break;
 				default:
 					break;
 			}
 			// ページインデックスの更新
 			tabIndex = arg;
-			if(callback !== undefined){
-				callback();
-			}
 		}
 	};
 	return {
-		init : init,
-		showTab : showTab
+		init : init
 	};
 });

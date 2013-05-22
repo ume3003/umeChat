@@ -66,7 +66,7 @@ exports.init = function(){
 			notifyMessage;
 		
 
-		console.log('init ',socket.handshake.session.user);
+		console.log('init ');
 		/* 初期化 */
 		// 前回ログアウト時らの通知メッセージの取得
 		db.Notify.findMyNotify(user,function(notifies){
@@ -136,19 +136,17 @@ exports.init = function(){
 			var _user = socket.handshake.session.user,
 				uData = {};
 			uData.id = _user.id;
+			db.User.findUser({_id:_user.id},function(uData){
+				socket.emit('gotMyInfo',uData);
+			});
+			/*
 			uData.identifier = _user.identifier;
 			uData.displayName = _user.displayName;
 			uData.photo = ps.userPhoto(_user);
 			uData.email = ps.userKey(_user);
-			uData.tokenSecret = _user.tokenSecret;
 			uData.type = _user.type;
-			console.log(uData.type);
-			if(uData.type === 'Twitter'){
-				ps.twitter.getFriend(uData.identifier,uData.tokenSecret,function(jsonData){
-					console.log(jsonData);
-				});
-			}
 			socket.emit('gotMyInfo',uData);
+			*/
 		});
 		/*
 		 *  通知をよんだ
@@ -213,7 +211,7 @@ exports.init = function(){
 							for(var i = 0; i < member.length;i++){
 								(function(_i){			// 開いていない人にはNotifyを保存
 									db.Notify.chatNotify(msg.roomId,member[_i],chat.id,chat.lastAccess,function(notify){
-										notifyMessage('sayNotify',member[_i],{roomId:msg.roomId,chatId:chat.id,notifyId:notify.id});
+										notifyMessage('sayNotify',member[_i],{roomId:msg.roomId,chatId:chat.id,notifyId:notify.id,body:chat.body,lastAccess:chat.lastAccess});
 									});
 								})(i);
 							}
@@ -359,11 +357,11 @@ exports.init = function(){
 		 */
 		socket.on('startChatTo',function(msg){
 			var _user = socket.handshake.session.user;
-			db.startChatTo(_user,msg.tgtId,function(room){
-				if(room !== undefined){
-					notifyMessage('startChatWith',msg.tgtId,room);
+			db.startChatTo(_user,msg.tgtId,function(mes){
+				if(mes.room !== undefined && mes.create === true){
+					notifyMessage('startChatWith',msg.tgtId,mes.room);
 				}
-				socket.emit('startedChatTo',room);		// 自分に
+				socket.emit('startedChatTo',mes.room);		// 自分に
 			});
 		});
 

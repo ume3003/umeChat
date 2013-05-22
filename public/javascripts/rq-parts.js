@@ -17,6 +17,17 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		$dlgBtnBase = $('#dlgBtnBase'),
 		defParam = {text : 'sample',
 					btns : [{text : 'ok',callback : function(){ closeDlg(); }}]},
+	createItem = function(param){
+		var $listItem = param.isPrepend !== undefined && param.isPrepend === true ?
+			param.scroll.prepend('<div/>').find(':first'):	// タブのリスト本体
+			param.scroll.append('<div/>').find(':last');	// タブのリスト本体
+
+		$listItem.addClass(param.listClass);
+		if(param.height !== undefined){  
+			$listItem.css({'height':param.height});
+		}
+		return $listItem;
+	},
 	makeBtns = function(btns){
 		var $btn,
 			i,
@@ -58,5 +69,9 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		$dlgBtnBase.empty();
 		$dlg.hide();
 	};
-	return {	showDlg : showDlg,	closeDlg : closeDlg};
+	return {	
+		createItem: createItem,
+		showDlg : showDlg,
+		closeDlg : closeDlg
+	};
 });
