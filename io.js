@@ -163,6 +163,10 @@ exports.init = function(){
 		socket.on('getInviteList',function(msg){
 			var _user = socket.handshake.session.user;
 			db.User.getInviteList(_user,{$in:['0','1','9']},function(list){
+				console.log('---------------');
+				console.log(list);
+				console.log('---------------');
+
 				socket.emit('gotInviteList',{invite:list});
 			});
 		});
@@ -312,6 +316,7 @@ exports.init = function(){
 		});
 		socket.on('getLog',function(msg){
 			var _user = socket.handshake.session.user;
+			console.log('-----',msg.lastAccess);
 			db.Room.getLog(_user,msg.roomId,msg.lastAccess,msg.count,function(logs){
 				socket.emit('gotLog',logs);
 			});
@@ -329,10 +334,13 @@ exports.init = function(){
 				for(var i = 0; i < 10;i++){// 未読をループ
 					if(i < notifies.length){
 						(function(_i,notify){
+							console.log(_i,notify);
 							db.Room.getOneChat(_user,msg.roomId,notify.param,function(chatObj){	// メッセージを取得
 								var chat = chatObj !== undefined ?chatObj[0].chat : undefined;
 								if(chat !== undefined){	// 既読数インクリメントしてルームへキャスト
-									docs.push(chat);
+									// docs.push(chat);
+									console.log(_i,chat);
+									docs[_i] = chat;
 									db.Room.incChat(_user,msg.roomId,chat._id,function(success){
 										if(success){
 											chatObject.to(msg.roomId).emit('chatRead',{chatId:chat._id});

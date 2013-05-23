@@ -74,8 +74,7 @@ exports.findMyNotify = function(me,callback){
 	});
 }
 exports.findUnreadChatNotify = function(me,roomId,callback){
-	console.log('findUnreadChatNotify ' ,{to_id:me.id,read:false,type:4,from_id:roomId});
-	_collection.find({to_id:me.id,read:false,type:4,from_id:roomId},{from_id:1,type:2,param:3,notifyTime:4},function(err,notifies){
+	_collection.find({to_id:me.id,read:false,type:4,from_id:roomId},{from_id:1,type:2,param:3,notifyTime:4},{sort:{notifyTime:1}},function(err,notifies){
 		callback(notifies);
 	});
 }

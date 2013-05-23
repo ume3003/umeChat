@@ -17,6 +17,8 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		$dlgBtnBase = $('#dlgBtnBase'),
 		defParam = {text : 'sample',
 					btns : [{text : 'ok',callback : function(){ closeDlg(); }}]},
+		$headerNumber	= [$('#friendBody'),$('#roomBody'),$('#chatBody'),$('#manageBody')],
+		headerNumber = [0,0,0,0],
 	createItem = function(param){
 		var $listItem = param.isPrepend !== undefined && param.isPrepend === true ?
 			param.scroll.prepend('<div/>').find(':first'):	// タブのリスト本体
@@ -27,6 +29,23 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			$listItem.css({'height':param.height});
 		}
 		return $listItem;
+	},
+	setHeaderNum = function(index,num){
+		headerNumber[index] = num;
+		$headerNumber[index].text(num);
+	},
+	addHeaderNum = function(index,addNum){
+		var newVal = headerNumber[index] + addNum;
+		setHeaderNum(index,newVal);
+	},
+	subHeaderNum = function(index,subNum){
+		var newVal = headerNumber[index] - subNum;
+		setHeaderNum(index,newVal);
+	},
+	toChatTime = function(dateString){
+		var d = new Date(dateString);
+			dString = d.getHours() +  ':' + d.getMinutes();		
+		return dString;
 	},
 	makeBtns = function(btns){
 		var $btn,
@@ -70,7 +89,11 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		$dlg.hide();
 	};
 	return {	
+		toChatTime : toChatTime,
 		createItem: createItem,
+		setHeaderNum : setHeaderNum,
+		addHeaderNum : addHeaderNum,
+		subHeaderNum : subHeaderNum,
 		showDlg : showDlg,
 		closeDlg : closeDlg
 	};

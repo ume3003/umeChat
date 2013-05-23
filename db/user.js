@@ -2,6 +2,7 @@ var _collection,
 	_schema,
 	_chat,
 	_friend,
+	_db,
 	ps = require('../passport');
 
 exports.collection = function(){
@@ -14,6 +15,7 @@ exports.schema = function(){
 exports.init = function(db,chat,friend)
 {
 	_chat = chat;
+	_db = db;
 	_friend = friend;
 
 	_schema = new db.Schema({
@@ -36,7 +38,9 @@ exports.init = function(db,chat,friend)
 // beInvite '0' '1' '2' 2はつかわずにFriendListを使うこと
 exports.getInviteList = function(user,beInvite,callback)
 {
-	_collection.aggregate({'$unwind':'$friends'},{'$match': { 'friends.user_id':user.id}},{'$match':{'friends.stat':beInvite}}
+	var columns = {'$project':{user_id:1,displayName:2,email:3,lastComment:4,photo:5,lastAccess:6,'friends':7}};
+	console.log({'$match': { 'user_id':user.id}},{'$match':{'friends.stat':beInvite}});
+	_collection.aggregate({'$unwind':'$friends'},{'$match': { '_id':_db.Types.ObjectId(user.id)}},{'$match':{'friends.stat':beInvite}},{'$project':{'friends':1}}
 			,function(err,docs){
 	console.log(err,docs);	
 		callback((!err && docs && docs.length > 0 ) ? docs : undefined);
@@ -53,13 +57,9 @@ exports.getInviteList = function(user,beInvite,callback)
 // idb.users.aggregate({'$unwind':'$comments'},{'$match':{'email':'ume3003@gmail.com','comments.flag':{$ne:0}}}, {'$project':{'comments':1}})
 exports.getFriendList = function(user,callback)
 {
-	var query	= {'friends.user_id':user.id,'friends.stat':'2'},
-		columns = {user_id:1,displayName:2,email:3,lastComment:4,photo:5,lastAccess:6};
-	console.log(query,columns);
-	//_collection.find(query,columns,function(err,friends){
-	_collection.aggregate({'$unwind':'$friends'},{'$match': { 'friends.user_id':user.id}},{'$match':{'friends.stat':'2'}},columns
+	var columns = {user_id:1,displayName:2,email:3,lastComment:4,photo:5,lastAccess:6};
+	_collection.aggregate({'$unwind':'$friends'},{'$match': { 'friends.user_id':user.id}},{'$match':{'friends.stat':'2'}},{'$project':columns}
 		,function(err,friends){
-		console.log(friends);
 		callback(!err ? friends : undefined);
 	});
 }
@@ -246,12 +246,12 @@ exports.addRoomInfo = function(userId,roomInfo,callback){
 	});
 };
 exports.removeRoomInfo = function(userId,roomId,callback){
-	_collection.update({_id:userId},{$pull : {roomInfos:{id:roomId}}},function(err){
+	_collection.update({_id:userId},{$pull : {roomInfos:{sayid:roomId}}},function(err){
 		callback(!err);
 	});
 };
 exports.modifyRoomInfo = function(userId,roomId,flag,callback){
-	_collection.update({_id:userId,'roomInfos.id':roomId},{$set : {'roomInfos.$.flag':flag}},function(err){
+	_collection.update({_id:userId,'roomInfos.sayid':roomId},{$set : {'roomInfos.$.flag':flag}},function(err){
 		callback(!err);
 	});
 };

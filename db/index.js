@@ -24,7 +24,7 @@ exports.startChatTo = function(user,tgtId,callback){
 		}
 		else{
 			exports.createRoom(user,roomInfo,function(room){
-				exports.User.addRoomInfo(tgtId,{id:room.id,flag:'1',lastAccess:new Date()},function(success){
+				exports.User.addRoomInfo(tgtId,{sayid:room.id,flag:'1',lastAccess:new Date()},function(success){
 					callback({room:success ? room : undefined,create:true});
 				});
 			});

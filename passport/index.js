@@ -9,9 +9,6 @@ exports.init = function(){
 
 	passport.serializeUser(function(user,done){
 		var userKey = module.exports.userKey(user);
-		console.log('serialize-----');
-		console.log(user);
-		console.log('--------------');
 		// ここでDBに保存
 		db.User.findUser({email : userKey},function(userDB){
 			if(userDB === undefined){	// 新規
