@@ -111,7 +111,7 @@ exports.init = function(){
 		 */
 		leaveRoom = function(roomId,_user,socket){
 			console.log('-----------------------');
-			console.log('leaveRoom ',roomId,_user);
+			console.log('leaveRoom ',roomId,_user.id);
 			console.log('-----------------------');
 			so.pullRoomMember(roomId,_user.id);
 			pullRoom(roomId,_user.id);
@@ -163,9 +163,6 @@ exports.init = function(){
 		socket.on('getInviteList',function(msg){
 			var _user = socket.handshake.session.user;
 			db.User.getInviteList(_user,{$in:['0','1','9']},function(list){
-				console.log('---------------');
-				console.log(list);
-				console.log('---------------');
 
 				socket.emit('gotInviteList',{invite:list});
 			});

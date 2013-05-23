@@ -209,6 +209,22 @@ a {
 	left:260px;
 	width:40px;
 }
+#actionBtn {
+	position : absolute;
+	top:40px;
+	left:256px;
+	width:48px;
+	height:24px;
+	border:1px solid #F00;
+	text-align:center;
+	display:none;
+	background-color:white;
+	cursor:normal;
+}
+#actionBtn:hover {
+	background-color:#aa0;
+	cursor:pointer;
+}
 /* frendのcss
  * 
  */
@@ -229,8 +245,8 @@ a {
 	left:54px;
 }
 .rmTime {
-	top:0px;
-	left:240px;
+	top:1px;
+	left:200px;
 }
 .rmCount { 
 	top:0px;
@@ -239,6 +255,57 @@ a {
 	top:20px;
 	left:54px;
 	width:180px;
+}
+.rmOBtn {
+	top:24px;
+	left:204px;
+	width:46px;
+	height:24px;
+	text-align:center;
+	border:1px solid #F00;
+	background-color:white;
+	cursor:normal;
+}
+.rmOBtn:hover {
+	background-color:#aa0;
+	cursor:pointer;
+}
+.rmIBtn {
+	top:24px;
+	left:254px;
+	width:46px;
+	height:24px;
+	text-align:center;
+	border:1px solid #F00;
+	background-color:white;
+	cursor:normal;
+}
+.rmIBtn:hover {
+	background-color:#aa0;
+	cursor:pointer;
+}
+.rmList {
+	top:50px;
+	overflow:auto;
+	left:224px;
+	width:76px;
+	height:120px;
+	text-align:center;
+	border:1px solid #F00;
+	display:none;
+}
+.rmListItem {
+	position:relative;
+	left:0px;
+	width:76px;
+	height:24px;
+	text-align:center;
+	background-color:white;
+	cursor:normal;
+}
+.rmListItem:hover {
+	background-color:#aa0;
+	cursor:pointer;
 }
 /*
  * chatheaderのcss
@@ -397,6 +464,9 @@ a {
 	width:304px;
 	background-color:white;
 	cursor:normal;
+}
+.border1 {
+	border:1px solid #F00;
 }
 .listDocBox {
 	position:relative;

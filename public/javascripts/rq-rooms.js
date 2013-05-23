@@ -18,6 +18,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		user,
 		friends,
 		showTab,
+		$btn			= $('#actionBtn'),
 		$baseHead		= $('#baseheads'),	// 通常のヘッダーオブジェクト
 		roomInfos = {},
 		$roomItems = [],				// フレンドリストページのフレンドアイテムオブジェクト
@@ -49,10 +50,12 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		}
 	},
 	setRoom = function(num,room,parent){
-		var $listItem = uiparts.createItem({scroll:parent,height:'52px',listClass:'listDocBox',isPripend:false}),
+		var $listItem = uiparts.createItem({scroll:parent,height:'52px',listClass:'listDoc border1',isPripend:false}),
 			userId,
 			roomURL,
-			roomName = room.name;
+			roomName = room.name,
+			friendsArray = friends.getArray();
+			
 		room.$listItem = $listItem;
 		$roomItems[num] = $listItem;
 		addInfo(room._id,room);
@@ -67,9 +70,32 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + roomURL  + ')');
 		$listItem.$chatTime = $listItem.append('<div/>').find(':last').addClass('textS rmTime').text(uiparts.toChatTime(room.lastAccess));
 		$listItem.$lastSay  = $listItem.append('<div/>').find(':last').addClass('textS rmComm textEllipsis').text(room.lastSay);
+		$listItem.$openBtn	= $listItem.append('<div/>').find(':last').addClass('textS rmOBtn').text('開く');
+		$listItem.$invBtn	= $listItem.append('<div/>').find(':last').addClass('textS rmIBtn').text('招待');
+		$listItem.$invList	= $listItem.append('<div/>').find(':last').addClass('textS rmList');
 		(function(arg){
-			$listItem.click(function(){
+			$listItem.$openBtn.click(function(){
 				showTab({tab:2,room:room});
+			});
+			$listItem.$invBtn.click(function(){
+				var j;
+				console.log(friendsArray.length);
+				for(j = 0;j < friendsArray.length;j++){
+					(function(_j){
+						li = $listItem.$invList.append('<div/>').find(':last').addClass('textS rmListItem').text(friendsArray[_j].displayName);
+						li.click(function(){
+							console.log(friendsArray[_j].email);
+							var p = $listItem.$invList.get(0);
+							while(p.hasChildNodes()){
+								p.removeChild(p.firstChild);
+							}
+							$listItem.$invList.hide();
+
+						});
+					})(j)
+					console.log(friendsArray[j]);
+				}
+				$listItem.$invList.show();
 			});
 		})(num);
 	},
@@ -81,9 +107,12 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	},
 	show = function(){
 		$baseHead.show();
+		$btn.text('追加');
+		$btn.show();
 	},
 	hide = function(){
 		$baseHead.hide();
+		$btn.hide();
 	};
 	return {
 		init : init,

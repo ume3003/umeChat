@@ -30,7 +30,14 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		return friendInfo[key];
 	},
 	removeInfo = function(key){
-		delete friendInfo(key);
+		delete friendInfo[key];
+	},
+	getFriendsArray = function(){
+		var it,list = [];
+		for(it in friendInfo){
+			list.push(friendInfo[it]);
+		}
+		return list;
 	},
 	makeList = function(callback){
 		ioc.getFriendList(function(list){
@@ -65,6 +72,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	return {
 		init : init,
 		makeList : makeList,
+		getArray : getFriendsArray,
 		setLine : setFriend,
 		getInfo : getInfo,
 		show : show,

@@ -39,10 +39,8 @@ exports.init = function(db,chat,friend)
 exports.getInviteList = function(user,beInvite,callback)
 {
 	var columns = {'$project':{user_id:1,displayName:2,email:3,lastComment:4,photo:5,lastAccess:6,'friends':7}};
-	console.log({'$match': { 'user_id':user.id}},{'$match':{'friends.stat':beInvite}});
 	_collection.aggregate({'$unwind':'$friends'},{'$match': { '_id':_db.Types.ObjectId(user.id)}},{'$match':{'friends.stat':beInvite}},{'$project':{'friends':1}}
 			,function(err,docs){
-	console.log(err,docs);	
 		callback((!err && docs && docs.length > 0 ) ? docs : undefined);
 	});
 	/*
@@ -128,7 +126,6 @@ exports.approveFriend = function(user,friend,callback){
 		yourQuery	= {email:friend.email,'friends.email':ps.userKey(user)}
 		Update		= {$set:{'friends.$.stat':'2'}};
 
-	console.log('approveFriend ',ps.userKey(user),friend.email,myQuery,yourQuery,Update);
 	_collection.update(myQuery,Update,function(err){
 		if(!err){
 			_collection.update(yourQuery,Update,function(err2){
