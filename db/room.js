@@ -83,6 +83,7 @@ exports.addRoomMember = function(roomId,userId,callback){
 // not tested
 exports.removeRoomMember = function(roomId,userId,callback){
 	_collection.update({_id:roomId},{$pull:{member:userId}},{upsert:false,multi:false},function(err){
+		console.log(err);
 		callback(!err);
 	});
 }

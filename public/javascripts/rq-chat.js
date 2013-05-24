@@ -111,6 +111,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				scrollToBottom();
 				scrollFunc = function(event){
 					if(event.target.scrollTop === 0){
+						console.log(logs[0]);
 						oldest = logs !== undefined ? logs[0].chat.lastAccess : lastAcc;
 						$grandBase.unbind('scroll',scrollFunc);
 						getOlderChat(roomInfo._id,oldest);

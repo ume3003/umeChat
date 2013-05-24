@@ -241,26 +241,27 @@ a {
  * roomのcss
  */
 .rmName {
-	top:0px;
+	top:1px;
 	left:54px;
 }
 .rmTime {
-	top:1px;
-	left:200px;
+	top:30px;
+	left:214px;
 }
 .rmCount { 
-	top:0px;
+	top:3px;
+	left:180px;
 }
 .rmComm {
-	top:20px;
+	top:30px;
 	left:54px;
-	width:180px;
+	width:140px;
 }
 .rmOBtn {
-	top:24px;
-	left:204px;
-	width:46px;
-	height:24px;
+	top:2px;
+	left:209px;
+	width:44px;
+	height:22px;
 	text-align:center;
 	border:1px solid #F00;
 	background-color:white;
@@ -271,10 +272,10 @@ a {
 	cursor:pointer;
 }
 .rmIBtn {
-	top:24px;
-	left:254px;
-	width:46px;
-	height:24px;
+	top:2px;
+	left:256px;
+	width:44px;
+	height:22px;
 	text-align:center;
 	border:1px solid #F00;
 	background-color:white;
@@ -284,20 +285,36 @@ a {
 	background-color:#aa0;
 	cursor:pointer;
 }
+.rmCBtn {
+	top:27px;
+	left:256px;
+	width:44px;
+	height:22px;
+	text-align:center;
+	border:1px solid #F00;
+	background-color:white;
+	cursor:normal;
+}
+.rmCBtn:hover {
+	background-color:#aa0;
+	cursor:pointer;
+}
 .rmList {
-	top:50px;
+	top:26px;
+	z-index:1000;
 	overflow:auto;
-	left:224px;
-	width:76px;
+	left:208px;
+	width:90px;
 	height:120px;
 	text-align:center;
 	border:1px solid #F00;
+	background-color:#9a0;
 	display:none;
 }
 .rmListItem {
 	position:relative;
 	left:0px;
-	width:76px;
+	width:90px;
 	height:24px;
 	text-align:center;
 	background-color:white;
@@ -465,7 +482,12 @@ a {
 	background-color:white;
 	cursor:normal;
 }
-.border1 {
+.listDocBorder {
+	position:relative;
+	left:0px;
+	width:304px;
+	background-color:white;
+	cursor:normal;
 	border:1px solid #F00;
 }
 .listDocBox {

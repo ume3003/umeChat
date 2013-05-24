@@ -76,9 +76,9 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		});
 		//  チャットから永続的に退室したコールバック
 		socket.on('leftRoom',function(msg){
-			if(cbks.leftRoom !== undefined){
-				cbks.leftRoom(msg);
-				cbks.leftRoom = undefined;
+			if(cbks.leaveRoom !== undefined){
+				cbks.leaveRoom(msg);
+				cbks.leaveRoom = undefined;
 			}
 		});
 		// チャットを開いたコールバック
@@ -270,6 +270,12 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			socket.emit('requestFriend',{'tgt':findString});
 		}
 	},
+	createRoom = function(msg,callback){
+		if(cbks.createRoom === undefined){
+			cbks.createRoom = callback;
+			socket.emit('createRoom',msg);
+		}
+	},
 	// チャットルームへの招待
 	inviteRoom = function(msg,callback){
 		if(cbks.inviteRoom === undefined){
@@ -393,6 +399,7 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		cancelFriend : cancelFriend,
 		approveFriend : approveFriend,
 		requestFriend : requestFriend,
+		createRoom : createRoom,
 		inviteRoom : inviteRoom,
 		joinRoom : joinRoom,
 		leaveRoom : leaveRoom,

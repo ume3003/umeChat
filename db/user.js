@@ -243,6 +243,8 @@ exports.addRoomInfo = function(userId,roomInfo,callback){
 	});
 };
 exports.removeRoomInfo = function(userId,roomId,callback){
+	console.log('removeRoomInfo');
+	console.log(roomId);
 	_collection.update({_id:userId},{$pull : {roomInfos:{sayid:roomId}}},function(err){
 		callback(!err);
 	});

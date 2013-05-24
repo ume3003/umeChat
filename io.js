@@ -256,10 +256,10 @@ exports.init = function(){
 		 */
 		socket.on('leaveRoom',function(msg){
 			var _user = socket.handshake.session.user;
-			db.leaveRoom(msg,msg.roomId,function(success){
+			db.leaveRoom(user,msg.roomId,function(success){
 				if(success){
 					leaveRoom(msg.roomId,_user,socket);
-					chatObject.to(roomId).emit('someoneLeft',{id:_user.id});		// 退出したルームにブロードキャスト
+					chatObject.to(msg.roomId).emit('someoneLeft',{id:_user.id});		// 退出したルームにブロードキャスト
 				}
 				socket.emit('leftRoom',{success:success});					// 自分自身に退出成功を返す
 			});
@@ -296,13 +296,13 @@ exports.init = function(){
 		 */
 		socket.on('createRoom',function(msg){
 			var _user = socket.handshake.session.user,
-				roomInfo = {roomOwner : _user.id,roomName : msg,member : [_user.id],mode:1};
+				roomInfo = {roomOwner : _user.id,roomName : msg.name,member : [_user.id],mode:1};
 
 			db.createRoom(_user,roomInfo,function(room){
 				if(room !== undefined){
 					enterRoom(room.id,_user,socket);
 				}
-				socket.emit('CreatedRoom',{room:room});
+				socket.emit('createdRoom',{room:room});
 			});
 		});
 		socket.on('getRoomList',function(msg){

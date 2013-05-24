@@ -24,6 +24,8 @@ exports.startChatTo = function(user,tgtId,callback){
 		}
 		else{
 			exports.createRoom(user,roomInfo,function(room){
+				console.log('-----------create Room ---------------');
+				console.log(room);
 				exports.User.addRoomInfo(tgtId,{sayid:room.id,flag:'1',lastAccess:new Date()},function(success){
 					callback({room:success ? room : undefined,create:true});
 				});
@@ -36,7 +38,7 @@ exports.startChatTo = function(user,tgtId,callback){
 exports.createRoom = function(user,roomInfo,callback){
 	exports.Room.addRoom(roomInfo,function(newRoom){			//　ルームIDをユーザーデータに追加
 		if(newRoom !== undefined){
-			exports.User.addRoomInfo(user.id,{id:newRoom.id,flag:'1',lastAccess:new Date()},function(success){
+			exports.User.addRoomInfo(user.id,{sayid:newRoom.id,flag:'1',lastAccess:new Date()},function(success){
 				callback(success ? newRoom : undefined);
 			});
 		}
@@ -75,14 +77,18 @@ exports.joinRoom = function(user,roomId,callback){
 //  db.users.update({'_id':userId}, {$push:{"room_ids":"0"}} )
 //  roomから退出する
 exports.leaveRoom = function(user,roomId,callback){
-	exports.Room.removeRoomMember(roomId,user.id,function(err){
-		if(!err){
-			exports.User.removeRoomInfo(user.id,roomId,function(success){
-				callback(success);
+	console.log('----------');
+	console.log(roomId);
+	exports.Room.removeRoomMember(roomId,user.id,function(success){
+	console.log('----------');
+		console.log(success);
+		if(success){
+			exports.User.removeRoomInfo(user.id,roomId,function(success2){
+				callback(success2);
 			});
 		}
 		else{
-			callback(!err);
+			callback(success);
 		}
 	});
 }

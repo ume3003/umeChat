@@ -47,6 +47,40 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			dString = d.getHours() +  ':' + d.getMinutes();		
 		return dString;
 	},
+	removeChilds = function(parent){
+		if(parent !== undefined){
+			while(parent.hasChildNodes()){
+				parent.removeChild(parent.firstChild);
+			}
+		}
+	},
+	setDetail = function($target,$detailWin){
+		$target.hover(
+			function(){ 
+				if($(this).text().length > 0){
+					$detailWin.text($(this).text());
+					var pos = $(this).offset();
+					$detailWin.css({'top': pos.top + $(this).height() + 'px','left':(pos.left + 10) + 'px'});
+					$detailWin.show();
+				}
+			},
+			function(){
+				if($(this).text().length > 0){
+					$detailWin.hide();
+				}
+		});
+	},
+	hasElement = function(ele,children){
+		var i;
+		if(ele !== undefined && children !== undefined){
+			for(i = 0;i < children.length;i++){
+				if(ele === children[i]){
+					return true;
+				}
+			}
+		}
+		return false;
+	},
 	makeBtns = function(btns){
 		var $btn,
 			i,
@@ -90,6 +124,9 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 	};
 	return {	
 		toChatTime : toChatTime,
+	   setDetail : setDetail,
+		removeChilds : removeChilds,
+		hasElement : hasElement,
 		createItem: createItem,
 		setHeaderNum : setHeaderNum,
 		addHeaderNum : addHeaderNum,
