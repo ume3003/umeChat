@@ -231,9 +231,10 @@ exports.init = function(){
 		 */
 		socket.on('inviteRoom',function(msg){
 			var _user = socket.handshake.session.user;	// DBに記録する
-			db.Notify.inviteNotify(_user.id,msg.tgtId,msg.roomId,function(notify){
-				notifyMessage('invited',msg.tgtId,{roomId:msg.roomId,notifyId:notify.id});
-			});
+			// TODO: ユーザーテーブルに記述済みかチェックし、してなかったら記述
+				db.Notify.inviteNotify(_user.id,msg.tgtId,msg.roomId,function(notify){
+					notifyMessage('invited',msg.tgtId,{roomId:msg.roomId,notifyId:notify.id});
+				});
 		});
 		/*
 		 * msg.roomId

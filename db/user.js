@@ -38,17 +38,14 @@ exports.init = function(db,chat,friend)
 // beInvite '0' '1' '2' 2はつかわずにFriendListを使うこと
 exports.getInviteList = function(user,beInvite,callback)
 {
-	var columns = {'$project':{user_id:1,displayName:2,email:3,lastComment:4,photo:5,lastAccess:6,'friends':7}};
-	_collection.aggregate({'$unwind':'$friends'},{'$match': { '_id':_db.Types.ObjectId(user.id)}},{'$match':{'friends.stat':beInvite}},{'$project':{'friends':1}}
+	_collection.aggregate(
+			{'$unwind'	:'$friends'},
+			{'$match'	:{'_id':_db.Types.ObjectId(user.id)}},
+			{'$match'	:{'friends.stat':beInvite}},
+			{'$project'	:{'friends':1}}
 			,function(err,docs){
-		callback((!err && docs && docs.length > 0 ) ? docs : undefined);
+				callback((!err && docs && docs.length > 0 ) ? docs : undefined);
 	});
-	/*
-	var query = {_id:user.id,"friends.stat":beInvite,privates:'f'};
-	_collection.find(query,function(err,docs){
-		callback((!err && docs && docs.length > 0 && docs[0].friends) ? docs[0].friends : undefined);
-	});
-	*/
 };
 
 // 特定のユーザーのフレンドの一覧を返す
@@ -243,8 +240,6 @@ exports.addRoomInfo = function(userId,roomInfo,callback){
 	});
 };
 exports.removeRoomInfo = function(userId,roomId,callback){
-	console.log('removeRoomInfo');
-	console.log(roomId);
 	_collection.update({_id:userId},{$pull : {roomInfos:{sayid:roomId}}},function(err){
 		callback(!err);
 	});
@@ -254,3 +249,4 @@ exports.modifyRoomInfo = function(userId,roomId,flag,callback){
 		callback(!err);
 	});
 };
+
