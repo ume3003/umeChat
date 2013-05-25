@@ -236,7 +236,7 @@ exports.addComment = function(user,comment,callback){
 
 exports.addRoomInfo = function(userId,roomInfo,callback){
 	console.log('addRoomInfo',userId,roomInfo.sayid);
-	_collection.find({_id:userId,'roomInfos.sayid':roomInfo,sayid},function(err,doc){
+	_collection.find({_id:userId,'roomInfos.sayid':roomInfo.sayid},function(err,doc){
 		console.log('addRoomInfo2',err,doc);
 		if(!err && doc.length === 0){
 			_collection.update({_id:userId},{$push:{roomInfos:roomInfo}},function(err){
@@ -246,13 +246,27 @@ exports.addRoomInfo = function(userId,roomInfo,callback){
 	});
 };
 exports.removeRoomInfo = function(userId,roomId,callback){
-	_collection.update({_id:userId},{$pull : {roomInfos:{sayid:roomId}}},function(err){
+	_collection.update({_id:_db.Types.ObjectId(userId)},{$pull : {roomInfos:{sayid:roomId}}},function(err){
 		callback(!err);
 	});
 };
 exports.modifyRoomInfo = function(userId,roomId,flag,callback){
-	_collection.update({_id:userId,'roomInfos.sayid':roomId},{$set : {'roomInfos.$.flag':flag}},function(err){
+	console.log('modifyRoomInfo',userId,roomId,flag);
+	_collection.update({_id:_db.Types.ObjectId(userId),'roomInfos.sayid':roomId},{$set : {'roomInfos.$.flag':flag}},function(err){
 		callback(!err);
 	});
 };
-
+exports.inviteRoomInfo = function(userId,callback){
+	var i,im,roomIds = [];
+	_collection.aggregate({'$unwind':'$roomInfos'},
+			{'$match'	: {'_id':_db.Types.ObjectId(userId)}},
+			{'$match'	: {'roomInfos.flag':0}},
+			{'$project' : {'_id':0,'roomInfos.sayid':1}},function(err,doc){
+		if(!err){
+			for(i = 0,im = doc.length;i < im ; i++){
+				roomIds.push(_db.Types.ObjectId(doc[i].roomInfos.sayid));
+			}
+		}
+		callback(roomIds);
+  });
+};

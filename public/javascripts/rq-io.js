@@ -151,6 +151,12 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 				cbks.getRoomList = undefined;
 			}
 		});
+		socket.on('gotInvitedRoomList',function(msg){
+			if(cbks.getInvitedRoomList !== undefined){
+				cbks.getInvitedRoomList(msg);
+				cbks.getInvitedRoomList = undefined;
+			}
+		});
 		/*
 		 * 登録されているサーバからの通信のUIへのプロクシ
 		 */
@@ -246,6 +252,13 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		if(cbks.getFriendList === undefined ){
 			cbks.getFriendList = callback;
 			socket.emit('getFriendList');
+		}
+	},
+	getInvitedRoomList = function(callback){
+		if(cbks.getInvitedRoomList === undefined){
+			cbks.getInvitedRoomList = callback;
+			socket.emit('getInvitedRoomList');
+
 		}
 	},
 	// チャットルームのリスト表示
@@ -416,6 +429,7 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		getUnreadChat : getUnreadChat,
 		getLog : getLog,
 		sayChat : sayChat,
+		getInvitedRoomList : getInvitedRoomList,
 		getFriendList : getFriendList,
 		getRoomList : getRoomList,
 		getManageList : getManageList,

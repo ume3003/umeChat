@@ -25,11 +25,20 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		roomInfos = {},
 		$roomItems = [],				// フレンドリストページのフレンドアイテムオブジェクト
 	init = function(param){
+		var i,im;
 		showTab = param.showTab;
 		user = param.user;
 		friends = param.friends;
 		$parent = param.parent[1];
 		console.log('rooms init');
+		ioc.getInvitedRoomList(function(msg){
+			if(msg !== undefined){
+				for(i = 0,im = msg.length; i < im; i++){
+					setRoom(i,msg[i],$parent);
+					console.log(msg[i]);
+				}
+			}
+		});
 	},
 	addInfo = function(key,info){
 		roomInfos[key] = info;
@@ -53,7 +62,9 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		}
 	},
 	setRoom = function(num,room,parent){
-		var $listItem = uiparts.createItem({scroll:parent,height:'52px',listClass:'listDocBorder',isPripend:false}),
+		var i,im,
+			bInvite = true,
+			$listItem = uiparts.createItem({scroll:parent,height:'52px',listClass:'listDocBorder',isPripend:false}),
 			userId,
 			roomURL,
 			roomName = room.roomName,
@@ -71,86 +82,106 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			userId = room.member[0] !== user._id ? room.member[0] : room.member[1];
 			roomName = friends.getInfo(userId) !== undefined ? friends.getInfo(userId).displayName : userId;
 			roomURL = friends.getInfo(userId) !== undefined ? friends.getInfo(userId).phota : 'none.jpg';
+			bInvite = false;
 		}
-
+		else{
+			for(i = 0,im = room.member.length;i < im;i++){
+				if(user._id === room.member[i]){
+					bInvite = false;
+					break;
+				}
+			}
+		}
 		$listItem.append('<div/>').find(':last').addClass('textS rmName').text(roomName);
 		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + roomURL  + ')');
 		$listItem.$count	= $listItem.append('<div/>').find(':last').addClass('textS rmCount').text(room.member.length);
 		$listItem.$chatTime = $listItem.append('<div/>').find(':last').addClass('textS rmTime').text(uiparts.toChatTime(room.lastAccess));
 		$listItem.$lastSay  = $listItem.append('<div/>').find(':last').addClass('textS rmComm textEllipsis').text(room.lastSay);
-		$listItem.$closeBtn	= $listItem.append('<div/>').find(':last').addClass('textS rmCBtn').text('閉じる');
+
 		$listItem.$openBtn	= $listItem.append('<div/>').find(':last').addClass('textS rmOBtn').text('開　く');
-		$listItem.$invBtn	= $listItem.append('<div/>').find(':last').addClass('textS rmIBtn').text('招　待');
-		$listItem.$invList	= $listItem.append('<div/>').find(':last').addClass('textS rmList');
-		uiparts.setDetail($listItem.$lastSay,$detailWin);
-		(function(arg){
-			var bShow = false;
-			$listItem.$openBtn.action = function(){
-				showTab({tab:2,room:room});
-			};
-			$listItem.$closeBtn.action = function(){
-				leaveRoom(num);	
-			};
-			$listItem.$invList.hideOne = function(){
-				uiparts.removeChilds($listItem.$invList.get(0),
-					function(child){
-						if(child.func !== undefined){
-							child.unbind('click',child.func);
-						}
+		$listItem.$openBtn.action = function(){
+			if(bInvite){
+				ioc.joinRoom({roomId:room._id},function(success){
+					deleteLine(num);
+					showTab({tab:2,room:room});
 				});
-				$listItem.$invList.hide();
-				bShow = false;
-			};
-			$listItem.$invList.showOne = function(){
-				var j,k,jm,km,bAdd,listCnt = 0;
-				if(!bShow){
-					bShow = true;
-					for(j = 0,jm = friendsArray.length;j < jm;j++){
-						bAdd = true;
-						for(k = 0,km = room.member.length; k < km;k++){
-							if(friendsArray[j]._id === room.member[k]){
-								bAdd = false;
-								break;
+				console.log('invited');
+			}
+			else{
+				showTab({tab:2,room:room});
+			}
+		};
+		$listItem.$openBtn.bind('click'		,$listItem.$openBtn.action);
+		uiparts.setDetail($listItem.$lastSay,$detailWin);
+		if(!bInvite){
+			$listItem.$closeBtn	= $listItem.append('<div/>').find(':last').addClass('textS rmCBtn').text('閉じる');
+			$listItem.$invBtn	= $listItem.append('<div/>').find(':last').addClass('textS rmIBtn').text('招　待');
+			$listItem.$invList	= $listItem.append('<div/>').find(':last').addClass('textS rmList');
+			(function(arg){
+				var bShow = false;
+				$listItem.$closeBtn.action = function(){
+					leaveRoom(num);	
+				};
+				$listItem.$invList.hideOne = function(){
+					uiparts.removeChilds($listItem.$invList.get(0),
+						function(child){
+							if(child.func !== undefined){
+								child.unbind('click',child.func);
+							}
+					});
+					$listItem.$invList.hide();
+					bShow = false;
+				};
+				$listItem.$invList.showOne = function(){
+					var j,k,jm,km,bAdd,listCnt = 0;
+					if(!bShow){
+						bShow = true;
+						for(j = 0,jm = friendsArray.length;j < jm;j++){
+							bAdd = true;
+							for(k = 0,km = room.member.length; k < km;k++){
+								if(friendsArray[j]._id === room.member[k]){
+									bAdd = false;
+									break;
+								}
+							}
+							if(bAdd){
+								(function(_j){
+									li = $listItem.$invList.append('<div/>').find(':last').addClass('textS rmListItem').text(friendsArray[_j].displayName);
+									li.func = function(){
+										console.log(friendsArray[_j].email);
+										ioc.inviteRoom({tgtId:friendsArray[_j]._id,roomId:room._id},function(msg){
+											$listItem.$invList.hideOne();
+										});
+									};
+									li.bind('click',li.func);
+									listCnt++;
+								})(j);
 							}
 						}
-						if(bAdd){
-							(function(_j){
-								li = $listItem.$invList.append('<div/>').find(':last').addClass('textS rmListItem').text(friendsArray[_j].displayName);
-								li.func = function(){
-									console.log(friendsArray[_j].email);
-									ioc.inviteRoom({tgtId:friendsArray[_j]._id,roomId:room_id},function(msg){
-										$listItem.$invList.hideOne();
-									});
-								};
-								li.bind('click',li.func);
-								listCnt++;
-							})(j);
+						if(listCnt > 0){
+							$listItem.$invList.css('height',24 * listCnt);
+							$listItem.$invList.show();
 						}
 					}
-					if(listCnt > 0){
-						$listItem.$invList.css('height',24 * listCnt);
-						$listItem.$invList.show();
+					else{
+						$listItem.$invList.hideOne();
 					}
-				}
-				else{
+				};
+				$listItem.$invList.closeOne = function(e){		// 移動先が、ボタン、リスト、リストの子ノードだったら閉じない
+					if(e.relatedTarget === $listItem.$invBtn.get(0) || e.relatedTarget === $listItem.$invList.get(0)){
+						return;
+					}
+					if(uiparts.hasElement(e.relatedTarget,$listItem.$invList.get(0).children)){
+						return;
+					}
 					$listItem.$invList.hideOne();
-				}
-			};
-			$listItem.$invList.closeOne = function(e){		// 移動先が、ボタン、リスト、リストの子ノードだったら閉じない
-				if(e.relatedTarget === $listItem.$invBtn.get(0) || e.relatedTarget === $listItem.$invList.get(0)){
-					return;
-				}
-				if(uiparts.hasElement(e.relatedTarget,$listItem.$invList.get(0).children)){
-					return;
-				}
-				$listItem.$invList.hideOne();
-			};
-			$listItem.$openBtn.bind('click'		,$listItem.$openBtn.action);
-			$listItem.$invList.bind('mouseout'	,$listItem.$invList.closeOne);
-			$listItem.$invBtn.bind('mouseout'	,$listItem.$invList.closeOne);
-			$listItem.$invBtn.bind('click'		,$listItem.$invList.showOne);
-			$listItem.$closeBtn.bind('click'	,$listItem.$closeBtn.action);
-		})(num);
+				};
+				$listItem.$invList.bind('mouseout'	,$listItem.$invList.closeOne);
+				$listItem.$invBtn.bind('mouseout'	,$listItem.$invList.closeOne);
+				$listItem.$invBtn.bind('click'		,$listItem.$invList.showOne);
+				$listItem.$closeBtn.bind('click'	,$listItem.$closeBtn.action);
+			})(num);
+		}
 	},
 	makeList = function(arg,bShow,callback){
 		console.log('create room list');

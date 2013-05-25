@@ -56,7 +56,11 @@ exports.findRoom = function(roomId,callback){
 		callback(!err ? (docs.length > 0 ? docs[0] : undefined) : undefined);
 	});
 }
-
+exports.findRoomByIds = function(ids,callback){
+	_collection.find({_id : { $in : ids }},function(err,docs){
+		callback(!err ? docs : undefined);
+	});
+}
 //	roomOwher	: String,
 //	roomName	: String,
 //	member		: [String],
@@ -76,7 +80,7 @@ exports.addRoom = function(roomInfo,callback){
 }
 exports.addRoomMember = function(roomId,userId,callback){
 	_collection.update({_id:roomId},{$push:{member:userId}},{upsert:false,multi:false},function(err){
-		callback(!err);
+		callback(err);
 	});
 }
 // ルームのメンバーを削除する

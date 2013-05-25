@@ -26,7 +26,7 @@ exports.startChatTo = function(user,tgtId,callback){
 			exports.createRoom(user,roomInfo,function(room){
 				console.log('-----------create Room ---------------');
 				console.log(room);
-				exports.User.addRoomInfo(tgtId,{sayid:room.id,flag:'1',lastAccess:new Date()},function(success){
+				exports.User.addRoomInfo(tgtId,{sayid:room.id,flag:1,lastAccess:new Date()},function(success){
 					callback({room:success ? room : undefined,create:true});
 				});
 			});
@@ -38,7 +38,7 @@ exports.startChatTo = function(user,tgtId,callback){
 exports.createRoom = function(user,roomInfo,callback){
 	exports.Room.addRoom(roomInfo,function(newRoom){			//　ルームIDをユーザーデータに追加
 		if(newRoom !== undefined){
-			exports.User.addRoomInfo(user.id,{sayid:newRoom.id,flag:'1',lastAccess:new Date()},function(success){
+			exports.User.addRoomInfo(user.id,{sayid:newRoom.id,flag:1,lastAccess:new Date()},function(success){
 				callback(success ? newRoom : undefined);
 			});
 		}
@@ -47,11 +47,18 @@ exports.createRoom = function(user,roomInfo,callback){
 		}
 	});
 }
+exports.invitedRoomList = function(user,callback){
+	exports.User.inviteRoomInfo(user.id,function(list){
+		exports.Room.findRoomByIds(list,function(roomList){
+			callback(roomList);
+		});
+	});
+}
 // tgtのユーザーをroomへinviteする
 exports.inviteRoom = function(tgtId,roomId,callback){
 	exports.Room.findRoom(roomId,function(invitedRoom){		// 部屋があるか
 		if(invitedRoom !== undefined){
-			exports.User.addRoomInfo(tgtId,{id:invitedRoom.id,flag:'0',lastAccess:new Date()},function(success){
+			exports.User.addRoomInfo(tgtId,{sayid:invitedRoom.id,flag:0,lastAccess:new Date()},function(success){
 				callback(success);
 			});
 		}
@@ -65,7 +72,7 @@ exports.inviteRoom = function(tgtId,roomId,callback){
 exports.joinRoom = function(user,roomId,callback){
 	exports.Room.addRoomMember(roomId,user.id,function(err){
 		if(!err){
-			exports.User.modifyRoomInfo(user.id,roomId,'1',function(success){
+			exports.User.modifyRoomInfo(user.id,roomId,1,function(success){
 				callback(success);
 			});
 		}

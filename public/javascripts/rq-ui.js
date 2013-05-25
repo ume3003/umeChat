@@ -143,7 +143,7 @@ define(['ioc','uiparts','chat','rooms','friends','manage','jquery','jquery.corne
 				friends.setLine(i,doc,$scroll[0]);
 				break;
 			case 1:
-				rooms.setLine(i,doc,$scroll[1]);
+				rooms.setLine(-1,doc,$scroll[1]);
 				break;
 			case 2:
 				break;

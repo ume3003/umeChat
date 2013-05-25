@@ -221,11 +221,18 @@ exports.init = function(){
 		 * msg.roomId msg.tgtUser
 		 *
 		 */
+		socket.on('getInvitedRoomList',function(msg){
+			var _user = socket.handshake.session.user;	// DBに記録する
+			console.log('getInvitedRoomList',_user);
+			db.invitedRoomList(_user,function(list){
+				socket.emit('gotInvitedRoomList',list);
+			});
+		});
 		socket.on('inviteRoom',function(msg){
 			var _user = socket.handshake.session.user;	// DBに記録する
 			// TODO: ユーザーテーブルに記述済みかチェックし、してなかったら記述
 			db.inviteRoom(msg.tgtId,msg.roomId,function(success){
-				if(room){
+				if(success){
 					db.Notify.inviteNotify(_user.id,msg.tgtId,msg.roomId,function(notify){
 						notifyMessage('invited',msg.tgtId,{roomId:msg.roomId,notifyId:notify.id});
 						socket.emit('invitedRoom',{success:true});
@@ -246,7 +253,7 @@ exports.init = function(){
 			db.joinRoom(_user,msg.roomId,function(success){
 				if(success){
 					enterRoom(msg.roomId,_user,socket);
-					chatObject.to(roomId).emit('newoneJoined',{id:_user.id});		// 入室したルームにブロードキャスト
+					chatObject.to(msg.roomId).emit('newoneJoined',{id:_user.id});		// 入室したルームにブロードキャスト
 				}
 				socket.emit('joinedRoom',{success:success});				// 自分自身に入室成功を返す
 			});
