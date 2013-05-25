@@ -92,7 +92,12 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				leaveRoom(num);	
 			};
 			$listItem.$invList.hideOne = function(){
-				uiparts.removeChilds($listItem.$invList.get(0));
+				uiparts.removeChilds($listItem.$invList.get(0),
+					function(child){
+						if(child.func !== undefined){
+							child.unbind('click',child.func);
+						}
+				});
 				$listItem.$invList.hide();
 				bShow = false;
 			};
@@ -111,12 +116,13 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 						if(bAdd){
 							(function(_j){
 								li = $listItem.$invList.append('<div/>').find(':last').addClass('textS rmListItem').text(friendsArray[_j].displayName);
-								//li.bind('click',liFunc);
-								li.click(function(){
+								li.func = function(){
 									console.log(friendsArray[_j].email);
-									$listItem.$invList.hideOne();
-
-								});
+									ioc.inviteRoom({tgtId:friendsArray[_j]._id,roomId:room_id},function(msg){
+										$listItem.$invList.hideOne();
+									});
+								};
+								li.bind('click',li.func);
 								listCnt++;
 							})(j);
 						}

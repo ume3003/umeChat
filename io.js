@@ -139,14 +139,6 @@ exports.init = function(){
 			db.User.findUser({_id:_user.id},function(uData){
 				socket.emit('gotMyInfo',uData);
 			});
-			/*
-			uData.identifier = _user.identifier;
-			uData.displayName = _user.displayName;
-			uData.photo = ps.userPhoto(_user);
-			uData.email = ps.userKey(_user);
-			uData.type = _user.type;
-			socket.emit('gotMyInfo',uData);
-			*/
 		});
 		/*
 		 *  通知をよんだ
@@ -232,9 +224,17 @@ exports.init = function(){
 		socket.on('inviteRoom',function(msg){
 			var _user = socket.handshake.session.user;	// DBに記録する
 			// TODO: ユーザーテーブルに記述済みかチェックし、してなかったら記述
-				db.Notify.inviteNotify(_user.id,msg.tgtId,msg.roomId,function(notify){
-					notifyMessage('invited',msg.tgtId,{roomId:msg.roomId,notifyId:notify.id});
-				});
+			db.inviteRoom(msg.tgtId,msg.roomId,function(success){
+				if(room){
+					db.Notify.inviteNotify(_user.id,msg.tgtId,msg.roomId,function(notify){
+						notifyMessage('invited',msg.tgtId,{roomId:msg.roomId,notifyId:notify.id});
+						socket.emit('invitedRoom',{success:true});
+					});
+				}
+				else{
+					socket.emit('invitedRoom',{success:false});
+				}
+			});
 		});
 		/*
 		 * msg.roomId

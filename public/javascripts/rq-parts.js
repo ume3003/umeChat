@@ -47,9 +47,12 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			dString = d.getHours() +  ':' + d.getMinutes();		
 		return dString;
 	},
-	removeChilds = function(parent){
+	removeChilds = function(parent,unbind){
 		if(parent !== undefined){
 			while(parent.hasChildNodes()){
+				if(unbind !== undefined){
+					unbind(parent.firstChild);
+				}
 				parent.removeChild(parent.firstChild);
 			}
 		}

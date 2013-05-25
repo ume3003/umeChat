@@ -235,8 +235,14 @@ exports.addComment = function(user,comment,callback){
 
 
 exports.addRoomInfo = function(userId,roomInfo,callback){
-	_collection.update({_id:userId},{$push:{roomInfos:roomInfo}},function(err){
-		callback(!err);
+	console.log('addRoomInfo',userId,roomInfo.sayid);
+	_collection.find({_id:userId,'roomInfos.sayid':roomInfo,sayid},function(err,doc){
+		console.log('addRoomInfo2',err,doc);
+		if(!err && doc.length === 0){
+			_collection.update({_id:userId},{$push:{roomInfos:roomInfo}},function(err){
+				callback(!err);
+			});
+		}
 	});
 };
 exports.removeRoomInfo = function(userId,roomId,callback){

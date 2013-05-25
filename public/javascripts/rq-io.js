@@ -81,6 +81,13 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 				cbks.leaveRoom = undefined;
 			}
 		});
+		// チャット招待したコールバック
+		socket.on('invitedRoom',function(msg){
+			if(cbks.inviteRoom !== undefined){
+				cbks.inviteRoom(msg);
+				cbks.inviteRoom = undefined;
+			}
+		});
 		// チャットを開いたコールバック
 		socket.on('openedRoom',function(msg){
 			if(cbks.openRoom !== undefined){

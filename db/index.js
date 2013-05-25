@@ -49,7 +49,7 @@ exports.createRoom = function(user,roomInfo,callback){
 }
 // tgtのユーザーをroomへinviteする
 exports.inviteRoom = function(tgtId,roomId,callback){
-	exports.Room.findRoom(roomId,function(invitedRoom){
+	exports.Room.findRoom(roomId,function(invitedRoom){		// 部屋があるか
 		if(invitedRoom !== undefined){
 			exports.User.addRoomInfo(tgtId,{id:invitedRoom.id,flag:'0',lastAccess:new Date()},function(success){
 				callback(success);
