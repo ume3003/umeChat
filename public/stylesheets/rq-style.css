@@ -154,7 +154,7 @@ a {
 }
 .textS {
 	position:absolute;
-	height:14px;
+	height:16px;
 	font: 12px "Lucida Grande", Helvetica, Arial, sans-serif;
 	font-weight:'normal';
 }
@@ -243,6 +243,7 @@ a {
 .rmName {
 	top:1px;
 	left:54px;
+	width:100px;
 }
 .rmTime {
 	top:30px;

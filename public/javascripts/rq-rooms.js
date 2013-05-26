@@ -92,7 +92,21 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				}
 			}
 		}
-		$listItem.append('<div/>').find(':last').addClass('textS rmName').text(roomName);
+		$listItem.$name		= $listItem.append('<div/>').find(':last').addClass('textS rmName').text(roomName);
+		$listItem.$name.bind('click',function(){
+			var $tgt = $(this),
+				val = $tgt.val();
+			$listItem.$name.focus();
+			$listItem.$name.select();
+			$listItem.$name.attr('contenteditable','true');
+			$listItem.$name.bind('keypress',function(e){
+				if(e.keyCode === 13 && e.shiftKey !== true){
+					val = $tgt.val();
+					console.log(val);
+					$tgt.attr('contenteditable','false');
+				}
+			});
+		});
 		$listItem.append('<div/>').find(':last').addClass('listPhoto photoM').css('background-image','url(' + roomURL  + ')');
 		$listItem.$count	= $listItem.append('<div/>').find(':last').addClass('textS rmCount').text(room.member.length);
 		$listItem.$chatTime = $listItem.append('<div/>').find(':last').addClass('textS rmTime').text(uiparts.toChatTime(room.lastAccess));
