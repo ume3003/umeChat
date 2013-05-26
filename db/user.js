@@ -82,14 +82,18 @@ exports.addFriend = function(user,friendEmail,callback)
 				friend.user_id = passkey.slice(passkey.length - 4);
 				friend.stat = '9';
 			}
-			_collection.find({_id : user.id,'friends.email':friendEmail},function(err,dumUser){	// 自分のDBへの保存
+			// ここの_id はObjectId化しなくても検索成功。。。
+			console.log('check same user ',user.id,friendEmail);
+			_collection.find({_id : _db.Types.ObjectId(user.id),'friends.email':friendEmail},function(err,dumUser){	// 自分のDBへの保存
 				if(!err){
 					if(dumUser && dumUser.length > 0){		//  該当ユーザーフレンドにいます
 						console.log('same friends change status');
 						callback(undefined);
 					}
 					else{		// フレンドにいないので追加です
-						_collection.update({_id:user.id},{$push:{'friends':friend}},function(err){
+						console.log('add ',user.id);
+						// ここのidはObjectIdにしないと更新おかしい
+						_collection.update({_id:_db.Types.ObjectId(user.id)},{$push:{'friends':friend}},function(err){
 							if(!err){
 								if(isUser){		// 相手のDBへ保存、検索条件に相手のDBのフレンド情報に自分がいない、を追加
 									_collection.update({email:friendEmail,'friends.email':{$ne:me.email}},{$push:{'friends':me}},function(err2){
@@ -119,7 +123,7 @@ exports.addFriend = function(user,friendEmail,callback)
 // friend id email stat
 // db.users.update( {email:'ume3003@gmail.com','friends.email':'ume3@gmail.com'},{$set:{"friends.$.stat":'9'}})
 exports.approveFriend = function(user,friend,callback){
-	var myQuery		= {_id:user.id,'friends.email':friend.email},
+	var myQuery		= {_id:_db.Types.ObjectId(user.id),'friends.email':friend.email},
 		yourQuery	= {email:friend.email,'friends.email':ps.userKey(user)}
 		Update		= {$set:{'friends.$.stat':'2'}};
 
@@ -140,7 +144,7 @@ exports.approveFriend = function(user,friend,callback){
 };
 // db.users.update({email:'ume3003@gmail.com'},{$pull:{'friends':{'email':'ume4@gmail.com'}}})
 exports.cancelFriend = function(user,friend,callback){
-	var myQuery		= {_id : user.id}		,myUpdate	= { $pull : {friends : {email:friend.email}}},
+	var myQuery		= {_id :_db.Types.ObjectId( user.id)},myUpdate	= { $pull : {friends : {email:friend.email}}},
 		yourQuery	= {email:friend.email}	,yourUpdate	= { $pull : {friends : {email:ps.userKey(user) }}};
 	
 	_collection.update(myQuery,myUpdate,function(err){				// 自分のフレンドステータスの変更
@@ -171,7 +175,6 @@ exports.findUser = function(query,callback){
 		var uData	= undefined;
 		if(docs.length > 0){
 			uData	= docs[0];
-//			uData.photo = uData.photo === undefined ?'/images/macallan.jpg';
 			uData.comment = docs[0].lastComment;
 		}
 		callback(uData);
@@ -207,7 +210,7 @@ exports.addUser = function(uData,callback){
 }
 // not tested
 exports.removeUser = function(user,callback){
-	_collection.remove({user_id : user.id},function(err){
+	_collection.remove({user_id : _db.Types.ObjectId(user.id)},function(err){
 		if(err){
 			console.log(err);
 		}
@@ -218,7 +221,7 @@ exports.removeUser = function(user,callback){
  *	status は　{field:updateStatus}の形で。
  */
 exports.modifyStatus = function(user,status,callback){
-	_collection.update({_id:user.id},status,function(err){
+	_collection.update({_id:_db.Types.ObjectId(user.id)},status,function(err){
 		callback(!err);
 	});
 }
@@ -228,7 +231,7 @@ exports.logout = function(user,callback){
 }
 
 exports.addComment = function(user,comment,callback){
-	_collection.update({_id:user.id},{$set:{lastComment:comment},$push:{comments:{body:comment,lastAccess:new Date()}}},function(err){
+	_collection.update({_id:_db.Types.ObjectId(user.id)},{$set:{lastComment:comment},$push:{comments:{body:comment,lastAccess:new Date()}}},function(err){
 			callback(!err);
 	});
 }
@@ -236,10 +239,10 @@ exports.addComment = function(user,comment,callback){
 
 exports.addRoomInfo = function(userId,roomInfo,callback){
 	console.log('addRoomInfo',userId,roomInfo.sayid);
-	_collection.find({_id:userId,'roomInfos.sayid':roomInfo.sayid},function(err,doc){
+	_collection.find({_id:_db.Types.ObjectId(userId),'roomInfos.sayid':roomInfo.sayid},function(err,doc){
 		console.log('addRoomInfo2',err,doc);
 		if(!err && doc.length === 0){
-			_collection.update({_id:userId},{$push:{roomInfos:roomInfo}},function(err){
+			_collection.update({_id:_db.Types.ObjectId(userId)},{$push:{roomInfos:roomInfo}},function(err){
 				callback(!err);
 			});
 		}

@@ -169,10 +169,15 @@ exports.init = function(){
 		socket.on('requestFriend',function(msg){
 			var _user = socket.handshake.session.user;
 			db.User.addFriend(_user,msg.tgt,function(you){
-				db.Notify.requestNotify(_user.id,you.user_id,function(notify){
-					notifyMessage('requestComming',you.user_id,{from:_user.id,msg:'requested'});
+				if(you !== undefined){
+					db.Notify.requestNotify(_user.id,you.user_id,function(notify){
+						notifyMessage('requestComming',you.user_id,{from:_user.id,msg:'requested'});
+						socket.emit('requestedFriend',{you:you,tgt:msg.tgt});
+					});
+				}
+				else{
 					socket.emit('requestedFriend',{you:you,tgt:msg.tgt});
-				});
+				}
 			});
 		});
 

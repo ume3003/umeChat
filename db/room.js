@@ -47,12 +47,12 @@ exports.findChat = function(user,tgtId,callback){
 	});
 }
 exports.findRoomShort = function(roomId,callback){
-	_collection.find({_id : roomId},roomFieldS,function(err,docs){
+	_collection.find({_id : _db.Types.ObjectId(roomId)},roomFieldS,function(err,docs){
 		callback(!err ? (docs.length > 0 ? docs[0] : undefined) : undefined);
 	});
 }
 exports.findRoom = function(roomId,callback){
-	_collection.find({_id : roomId},function(err,docs){
+	_collection.find({_id : _db.Types.ObjectId(roomId)},function(err,docs){
 		callback(!err ? (docs.length > 0 ? docs[0] : undefined) : undefined);
 	});
 }
@@ -79,20 +79,20 @@ exports.addRoom = function(roomInfo,callback){
 	});
 }
 exports.addRoomMember = function(roomId,userId,callback){
-	_collection.update({_id:roomId},{$push:{member:userId}},{upsert:false,multi:false},function(err){
+	_collection.update({_id:_db.Types.ObjectId(roomId)},{$push:{member:userId}},{upsert:false,multi:false},function(err){
 		callback(err);
 	});
 }
 // ルームのメンバーを削除する
 // not tested
 exports.removeRoomMember = function(roomId,userId,callback){
-	_collection.update({_id:roomId},{$pull:{member:userId}},{upsert:false,multi:false},function(err){
+	_collection.update({_id:_db.Types.ObjectId(roomId)},{$pull:{member:userId}},{upsert:false,multi:false},function(err){
 		console.log(err);
 		callback(!err);
 	});
 }
 exports.getRoomMember = function(roomId,callback){
-	_collection.find({_id:roomId},{roomName:1,member:2},function(err,roomInfo){
+	_collection.find({_id:_db.Types.ObjectId(roomId)},{roomName:1,member:2},function(err,roomInfo){
 		if(!err && roomInfo !== undefined && roomInfo[0].member !== undefined){
 			callback(roomInfo[0].member);
 		}
@@ -103,11 +103,6 @@ exports.getRoomMember = function(roomId,callback){
 }
 exports.getLeftRoomMember = function(roomId,joinMem,callback){
 	var leftMember = undefined;
-	/*
-	var leftMember = undefined,
-		joinString = joinMem.join(',');
-	console.log('left joinM',joinMem,joinString);
-		*/
 	exports.getRoomMember(roomId,function(allMember){
 		console.log('all mem ' ,allMember);
 		if(allMember !== undefined){
@@ -116,11 +111,6 @@ exports.getLeftRoomMember = function(roomId,joinMem,callback){
 				if(joinMem[allMember[i]] === undefined){
 					leftMember.push(allMember[i]);
 				}
-				/*
-				if(joinString.indexOf(allMember[i]) < 0){
-					leftMember.push(allMember[i]);
-				}
-				*/
 			}
 		}
 		callback(leftMember);
@@ -137,7 +127,7 @@ exports.sayChat = function(userId,roomId,message,flag,callback){
 	newChat.flag = flag;
 	newChat.body = message;
 	newChat.lastAccess = new Date();
-	_collection.update({_id:roomId},{$set:{lastAccess:newChat.lastAccess,lastSay:message},$push:{chat:newChat}},function(err){
+	_collection.update({_id:_db.Types.ObjectId(roomId)},{$set:{lastAccess:newChat.lastAccess,lastSay:message},$push:{chat:newChat}},function(err){
 		console.log(newChat.id);		// _idが撮れてる
 		callback(!err ? newChat : undefined);
 	});
@@ -186,7 +176,7 @@ exports.getLog = function(user,roomId,lastAccess,count,callback){
 	});
 }
 exports.incChat = function(user,roomId,chatId,callback){
-	_collection.update({'_id':roomId,'chat._id':chatId},{'$inc':{'chat.$.flag':1}},function(err){
+	_collection.update({'_id':_db.Types.ObjectId(roomId),'chat._id':chatId},{'$inc':{'chat.$.flag':1}},function(err){
 		callback(!err);
 	});
 }
