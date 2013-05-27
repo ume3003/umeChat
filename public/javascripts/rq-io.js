@@ -88,6 +88,20 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 				cbks.inviteRoom = undefined;
 			}
 		});
+		// ルーム画像変更コールバック
+		socket.on('changedRoomPhoto',function(msg){
+			if(cbks.changeRoomPhoto !== undefined){
+				cbks.changeRoomPhoto(msg);
+				cbks.changeRoomPhoto = undefined;
+			}
+		});
+		// ルーム名変更コールバック
+		socket.on('changedRoomName',function(msg){
+			if(cbks.changeRoomName !== undefined){
+				cbks.changeRoomName(msg);
+				cbks.changeRoomName = undefined;
+			}
+		});
 		// チャットを開いたコールバック
 		socket.on('openedRoom',function(msg){
 			if(cbks.openRoom !== undefined){
@@ -296,6 +310,18 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			socket.emit('createRoom',msg);
 		}
 	},
+	changeRoomPhoto = function(msg,callback){
+		if(cbks.changeRoomPhoto === undefined){
+			cbks.changeRoomPhoto = callback;
+			socket.emit('changeRoomPhoto',msg);
+		}
+	},
+	changeRoomName = function(msg,callback){
+		if(cbks.changeRoomName === undefined){
+			cbks.changeRoomName = callback;
+			socket.emit('changeRoomName',msg);
+		}
+	},
 	// チャットルームへの招待
 	inviteRoom = function(msg,callback){
 		if(cbks.inviteRoom === undefined){
@@ -423,6 +449,8 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 		inviteRoom : inviteRoom,
 		joinRoom : joinRoom,
 		leaveRoom : leaveRoom,
+		changeRoomName : changeRoomName,
+		changeRoomPhoto : changeRoomPhoto,
 		openRoom : openRoom,
 		closeRoom : closeRoom,
 		startChatTo : startChatTo,

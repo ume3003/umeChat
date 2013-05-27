@@ -277,6 +277,25 @@ exports.init = function(){
 				socket.emit('leftRoom',{success:success});					// 自分自身に退出成功を返す
 			});
 		});
+		/*		ルーム画像の変更
+		 *
+		 */
+		socket.on('changeRoomPhoto',function(msg){
+			var _user = socket.handshake.session.user;
+			db.Room.changeRoomPhoto(_user,msg.roomId,msg.roomPhoto,function(success){
+				socket.emit('changedRoomPhoto',success);
+			});
+		});
+		/*		ルーム名称の変更
+		 *
+		 */
+		socket.on('changeRoomName',function(msg){
+			var _user = socket.handshake.session.user;
+			console.log(user,msg);
+			db.Room.changeRoomName(_user,msg.roomId,msg.roomName,function(success){
+				socket.emit('changedRoomName',success);
+			});
+		});
 		/*
 		 * チャットルームを開く。フラグがたち、以後メッセージが配信される
 		 */
@@ -309,7 +328,7 @@ exports.init = function(){
 		 */
 		socket.on('createRoom',function(msg){
 			var _user = socket.handshake.session.user,
-				roomInfo = {roomOwner : _user.id,roomName : msg.name,member : [_user.id],mode:1};
+				roomInfo = {roomOwner : _user.id,roomName : msg.name,member : [_user.id],mode:1,photo:'none.jpg'};
 
 			db.createRoom(_user,roomInfo,function(room){
 				if(room !== undefined){
