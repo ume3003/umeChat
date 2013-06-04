@@ -21,6 +21,7 @@ define(['ioc','uiparts','chat','rooms','friends','manage','jquery','jquery.corne
 	var
 		user = undefined,
 		i,
+		eventName = 'click',
 		tabIndex = -1,
 		$tabItem,
 		$scroll  = {},					// スクロール用のオブジェクト
@@ -90,7 +91,7 @@ define(['ioc','uiparts','chat','rooms','friends','manage','jquery','jquery.corne
 		$('#myComment').text(user.lastComment);
 		$('#baseheads').show();
 	},
-	init = function(){
+	init = function(params){
 		console.log('init');
 		// サーバからの通知のコールバック登録
 		ioc.someoneSay(someoneSaid);
@@ -104,16 +105,20 @@ define(['ioc','uiparts','chat','rooms','friends','manage','jquery','jquery.corne
 		ioc.someoneLeft(someoneLeft);
 		ioc.startChatWith(startChatWith);
 
+		if(params.eventName !== undefined){
+			eventName = params.eventName;
+		}
 		$tabItem = [$('#friendTab').corner(),$('#roomTab').corner(),$('#chatTab').corner(),$('#manageTab').corner()];
 		for(i = 0;i < 4;i++){		
 			(function(arg){			// タブ切り替え
-				$tabItem[arg].click(function(){	showTab({tab:arg}); });
+				//$tabItem[arg].click(function(){	showTab({tab:arg}); });
+				$tabItem[arg].bind(eventName,function(){	showTab({tab:arg}); });
 			})(i);
 			$scroll[i] = $tabBase[i].append('<div/>').find(':last');
 			uiparts.setHeaderNum(i,0);
 		}
 		ioc.getMyInfo(function(_user){
-			var param = {showTab : showTab,user:_user,friends:friends,parent:$scroll};
+			var param = {showTab : showTab,user:_user,friends:friends,parent:$scroll,eventName:eventName};
 			user = _user;
 			createHeader(_user);
 			manage.init(param);

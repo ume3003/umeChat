@@ -99,7 +99,7 @@ define(['jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],funct
 			$btn.css('width', btnWidth + 'px');
 			$btn.corner();
 			(function(arg){
-				$btn.click(
+				$btn.bind(btns[i].eventName,
 					function(){
 						btns[arg].callback();
 					});

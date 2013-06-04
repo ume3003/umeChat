@@ -17,6 +17,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	var 
 		user,
 		friends,
+		eventName = 'click',
 		currentRoom = undefined,
 		previousRoom = undefined,
 		$grandBase = $('#chatBase'),
@@ -33,6 +34,9 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		user = param.user;
 		friends = param.friends;
 		$parent = param.parent[2];
+		if(param.eventName !== undefined){
+			eventName = param.eventName;
+		}
 		$chatEntry.keypress(function(event){
 			var $area = $(this),
 				val;

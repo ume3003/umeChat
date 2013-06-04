@@ -16,11 +16,15 @@ require.config({
 define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],function(ioc,uiparts,$){
 	var 
 		showTab,
+		eventName = 'click',
 		$baseHead		= $('#baseheads'),	// 通常のヘッダーオブジェクト
 		friendInfo = {},
 		$friendItems = [],				// フレンドリストページのフレンドアイテムオブジェクト
 	init = function(param){
 		showTab = param.showTab;
+		if(param.eventName !== undefined){
+			eventName = param.eventName;
+		}
 		console.log('friends init');
 	},
 	addInfo = function(key,info){
@@ -54,7 +58,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		$listItem.append('<div/>').find(':last').addClass('textM flName').text(doc.displayName);
 		$listItem.append('<div/>').find(':last').addClass('textS flComm textEllipsis').text(doc.lastComment);
 		(function(arg){
-			$listItem.click(function(){
+			$listItem.bind(eventName,function(){
 				ioc.startChatTo({tgtId:doc._id},function(room){
 					if(room !== undefined){
 						showTab({tab:2,room:room});

@@ -15,14 +15,18 @@ require.config({
 });
 define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mousewheel'],function(ioc,uiparts,$){
 	var 
+		eventName		= 'cklick',
 		$baseHead		= $('#baseheads'),	// 通常のヘッダーオブジェクト
 		$manageBox		= $('#newFriendBox'),
 		$manageInput	= $('#newFriend'),
 		$manageBtn		= $('#newFriendAdd'),
 		$manageItems = [],
 
-	init = function(){
+	init = function(param){
 		console.log('manage init');
+		if(param.eventName !== undefined){
+			eventName = param.eventName;
+		}
 		prepareAddFriendbox();
 	},
 	deleteManage = function(num,$listItem){
@@ -51,7 +55,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				console.log(manage._id,manage.email,manage.stat);
 				if(manage.stat === '1'){// TODO:申請承認処理
 					uiparts.showDlg({text:manage.email + 'からのフレンド申請を承認します',
-						btns : [ { text:'ok',callback:function(){
+						btns : [ { text:'ok',eventName:eventName,callback:function(){
 							ioc.approveFriend(manage,function(success){
 								if(success){
 									console.log('approval success',manage);
@@ -61,14 +65,14 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 								uiparts.closeDlg();
 							});
 						}},
-						{text:'cancel',callback:function(){
+						{text:'cancel',eventName:eventName,callback:function(){
 							uiparts.closeDlg();
 						}}
 					]});
 				}
 				else{	// 0か9
 					uiparts.showDlg({text:manage.email + 'へのフレンド申請を取り消します',
-						btns : [ { text:'ok',callback:function(){
+						btns : [ { text:'ok',eventName:eventName,callback:function(){
 							ioc.cancelFriend(manage,function(success){
 								if(success){
 									console.log('cancel success',manage);
@@ -77,7 +81,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 								uiparts.closeDlg();
 							});
 						}},
-						{text:'cancel',callback:function(){
+						{text:'cancel',eventName:eventName,callback:function(){
 							uiparts.closeDlg();
 						}}
 					]});
@@ -92,7 +96,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 			if(addFriend.length > 0){
 				uiparts.showDlg(
 					{text :  addFriend + 'を検索します',
-						btns: [	{text : 'ok',callback : 
+						btns: [	{text : 'ok',eventName:eventName,callback : 
 							function(){ 
 								ioc.requestFriend(addFriend,function(addedFriendInfo){
 									var num = $manageItems.length;
@@ -106,7 +110,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 								uiparts.closeDlg();
 								$manageInput.val('');
 							}},
-							{text : 'cancel',callback : 
+							{text : 'cancel',eventName:eventName,callback : 
 							function(){
 								uiparts.closeDlg();
 								$manageInput.val('');

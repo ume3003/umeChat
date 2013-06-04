@@ -19,6 +19,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		friends,
 		showTab,
 		$parent,
+		eventName		= 'click',
 		$detailWin		= $('#detailWin'),
 		$btn			= $('#actionBtn'),
 		$baseHead		= $('#baseheads'),	// 通常のヘッダーオブジェクト
@@ -30,6 +31,9 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		user = param.user;
 		friends = param.friends;
 		$parent = param.parent[1];
+		if(param.eventName !== undefined){
+			eventName = param.eventName;
+		}
 		console.log('rooms init');
 		ioc.getInvitedRoomList(function(msg){
 			if(msg !== undefined){
@@ -94,7 +98,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 		}
 		$listItem.$name		= $listItem.append('<div/>').find(':last').addClass('textS rmName').text(roomName);
 		if(room.roomOwner === user._id && room.mode !== 0){
-			$listItem.$name.bind('click',function(){
+			$listItem.$name.bind(eventName,function(){
 				var $tgt = $(this),
 					val = $tgt.text();
 				$listItem.$name.focus();
@@ -145,7 +149,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 				showTab({tab:2,room:room});
 			}
 		};
-		$listItem.$openBtn.bind('click'		,$listItem.$openBtn.action);
+		$listItem.$openBtn.bind(eventName		,$listItem.$openBtn.action);
 		uiparts.setDetail($listItem.$lastSay,$detailWin);
 		if(!bInvite){
 			$listItem.$closeBtn	= $listItem.append('<div/>').find(':last').addClass('textS rmCBtn').text('閉じる');
@@ -160,7 +164,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 					uiparts.removeChilds($listItem.$invList.get(0),
 						function(child){
 							if(child.func !== undefined){
-								child.unbind('click',child.func);
+								child.unbind(eventName,child.func);
 							}
 					});
 					$listItem.$invList.hide();
@@ -187,7 +191,7 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 											$listItem.$invList.hideOne();
 										});
 									};
-									li.bind('click',li.func);
+									li.bind(eventName,li.func);
 									listCnt++;
 								})(j);
 							}
@@ -210,10 +214,10 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 					}
 					$listItem.$invList.hideOne();
 				};
-				$listItem.$invList.bind('mouseout'	,$listItem.$invList.closeOne);
-				$listItem.$invBtn.bind('mouseout'	,$listItem.$invList.closeOne);
-				$listItem.$invBtn.bind('click'		,$listItem.$invList.showOne);
-				$listItem.$closeBtn.bind('click'	,$listItem.$closeBtn.action);
+				//$listItem.$invList.bind('mouseout'	,$listItem.$invList.closeOne);
+				//$listItem.$invBtn.bind('mouseout'	,$listItem.$invList.closeOne);
+				$listItem.$invBtn.bind(eventName		,$listItem.$invList.showOne);
+				$listItem.$closeBtn.bind(eventName	,$listItem.$closeBtn.action);
 			})(num);
 		}
 	},
@@ -290,11 +294,11 @@ define(['ioc','uiparts','jquery','jquery.corner','jquery.jscrollpane','jquery.mo
 	},
 	show = function(){
 		$baseHead.show();
-		$btn.text('追加').show().bind('click',addRoom);
+		$btn.text('追加').show().bind(eventName,addRoom);
 	},
 	hide = function(){
 		$baseHead.hide();
-		$btn.unbind('click',addRoom).hide();
+		$btn.unbind(eventName,addRoom).hide();
 	};
 	return {
 		init : init,
